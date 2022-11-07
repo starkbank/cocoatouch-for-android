@@ -48,7 +48,7 @@ class UIFragment : Fragment() {
         return transition.animator(this, size, enter)
     }
 
-    fun viewWithTag(tag: Int): Any {
+    fun viewWithTag(tag: Int): View {
         return this.container!!.findViewById(tag)
     }
 

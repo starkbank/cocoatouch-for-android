@@ -9,8 +9,12 @@ class MainViewController: UIViewController() {
         super.viewDidLoad()
     }
 
-    @IBAction(R.id.mainTextfield) fun presentTextController(sender: UIButton?) {
+    @IBAction(R.id.mainTextfield) fun presentTextController(sender: UIButton) {
         presentViewController(R.layout.textfieldviewcontroller)
+    }
+
+    @IBAction(R.id.mainTableview) fun presentTableViewController(sender: UIButton) {
+        presentViewController(R.layout.tableviewcontroller)
     }
 
     //

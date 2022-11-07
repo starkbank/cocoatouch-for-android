@@ -19,6 +19,7 @@ open class UIStoryboard: UIActivity() {
     override fun initApplication() {
         val application = UIApplication.sharedApplication()
         application.activity = this
+        application.storyboard = this
         application.delegate = this.applicationDelegate()
         application.delegate?.application(application, null)
         application.delegate?.applicationDidBecomeActive(application)
@@ -32,6 +33,10 @@ open class UIStoryboard: UIActivity() {
     //
     open fun viewControllerForIdentifier(identifier: Int): UIViewController {
         return UIViewController()
+    }
+
+    open fun viewCellForIdentifier(identifier: Int): UITableViewCell {
+        return UITableViewCell()
     }
 
     open fun applicationDelegate(): UIApplicationDelegate? {

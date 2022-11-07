@@ -1,4 +1,5 @@
 package com.starkbank.cocoatouch.uikit
+import android.view.View
 
 
 open class UIView: UIResponder() {
@@ -8,8 +9,11 @@ open class UIView: UIResponder() {
     //
     // Public Instance Methods
     //
-    override fun viewWithTag(tag: Int): Any {
-        return this.fragment!!.viewWithTag(tag)
+    override fun viewWithTag(tag: Int): View {
+        if (this.fragment != null) {
+            return this.fragment!!.viewWithTag(tag)
+        }
+        return super.viewWithTag(tag)
     }
 
     open fun setHidden(hidden: Boolean) {

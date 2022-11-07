@@ -6,6 +6,7 @@ object UIApplication: UIResponder() {
 
     var delegate: UIApplicationDelegate? = null
     var isNotificationsEnabled: Boolean = true
+    internal var storyboard: UIStoryboard? = null
     internal var activity: UIActivity? = null
 
     fun sharedApplication(): UIApplication {
@@ -18,5 +19,9 @@ object UIApplication: UIResponder() {
 
     fun activity(): UIActivity {
         return this.activity!!
+    }
+
+    fun storyboard(): UIStoryboard {
+        return this.storyboard!!
     }
 }

@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import android.view.View
 
 
 open class UIViewController: UIResponder() {
@@ -15,7 +16,7 @@ open class UIViewController: UIResponder() {
     //
     // Public Instance Methods
     //
-    override fun viewWithTag(tag: Int): Any {
+    override fun viewWithTag(tag: Int): View {
         return this.view!!.viewWithTag(tag)
     }
 

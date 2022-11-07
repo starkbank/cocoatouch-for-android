@@ -26,6 +26,12 @@
             android:layout_height="wrap_content"
             android:text="TextField" />
 
+        <Button
+            android:id="@+id/mainTableview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TableView" />
+
 <!--        <Button-->
 <!--            android:id="@+id/mainTutorial"-->
 <!--            android:layout_width="match_parent"-->
@@ -37,12 +43,6 @@
 <!--            android:layout_width="match_parent"-->
 <!--            android:layout_height="wrap_content"-->
 <!--            android:text="Transitions" />-->
-
-<!--        <Button-->
-<!--            android:id="@+id/mainTableview"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="TableView" />-->
 
 <!--        <Button-->
 <!--            android:id="@+id/mainCustomObjects"-->

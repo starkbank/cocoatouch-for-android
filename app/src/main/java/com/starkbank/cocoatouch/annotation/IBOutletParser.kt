@@ -17,8 +17,8 @@ object IBOutletParser {
         if (field.isAnnotationPresent(IBOutlet::class.java)) {
             val outlet = field.getAnnotation(IBOutlet::class.java)
             try {
-                val responder = field.type.newInstance()
-                (responder as UIResponder).widget = controller.viewWithTag(outlet.value)
+                val responder = field.type.newInstance() as UIResponder
+                responder.widget = controller.viewWithTag(outlet.value)
                 field[controller] = responder
             } catch (e: IllegalAccessException) {
                 e.printStackTrace()
