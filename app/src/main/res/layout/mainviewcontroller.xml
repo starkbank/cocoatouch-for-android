@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#ffffff">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentTop="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EXAMPLES:"
+            android:layout_gravity="center"
+            android:id="@+id/textView"
+            android:layout_marginTop="44dp"/>
+
+        <Button
+            android:id="@+id/mainTextfield"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextField" />
+
+        <Button
+            android:id="@+id/mainTutorial"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tutorial" />
+
+        <Button
+            android:id="@+id/mainTransition"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Transitions" />
+
+        <Button
+            android:id="@+id/mainTableview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TableView" />
+
+        <Button
+            android:id="@+id/mainCustomObjects"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Custom Objects" />
+
+        <Button
+            android:id="@+id/mainShare"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Share and Login" />
+
+        <Button
+            android:id="@+id/mainAlert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Alerts and Selections" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/ownerLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Created by Stark Bank"
+        android:gravity="center"
+        android:textSize="15sp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="10dp"/>
+</RelativeLayout>
