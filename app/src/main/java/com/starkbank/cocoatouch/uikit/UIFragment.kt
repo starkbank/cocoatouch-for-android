@@ -1,16 +1,16 @@
 package com.starkbank.cocoatouch.uikit
-import com.starkbank.cocoatouch.animation.NoneTransition
-import android.animation.Animator
-import android.graphics.Point
-import android.os.Bundle
-import android.view.Display
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
+import com.starkbank.cocoatouch.animation.NoneTransition
+import androidx.fragment.app.Fragment
+import android.animation.Animator
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.ViewGroup
+import android.graphics.Point
+import android.view.Display
+import android.view.View
+import android.os.Bundle
 
 
 class UIFragment : Fragment() {

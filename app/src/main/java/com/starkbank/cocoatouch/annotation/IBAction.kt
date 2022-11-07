@@ -1,7 +1,7 @@
 package com.starkbank.cocoatouch.annotation
-import androidx.annotation.IdRes
-import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Retention
+import androidx.annotation.IdRes
 
 
 @Retention(RetentionPolicy.RUNTIME)

@@ -1,9 +1,9 @@
 package com.starkbank.cocoatouch.uikit
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.starkbank.cocoatouch.compability.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import androidx.appcompat.app.AppCompatActivity
 import java.lang.reflect.Method
+import android.os.Bundle
 
 
 open class UIActivity: AppCompatActivity() {

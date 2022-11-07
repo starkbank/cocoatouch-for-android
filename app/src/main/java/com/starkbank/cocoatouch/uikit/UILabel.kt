@@ -1,6 +1,6 @@
 package com.starkbank.cocoatouch.uikit
-import android.view.View
 import android.widget.TextView
+import android.view.View
 
 
 open class UILabel : UIView() {

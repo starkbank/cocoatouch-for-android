@@ -1,6 +1,6 @@
 package com.starkbank.cocoatouch.uikit
-import android.view.View
 import com.starkbank.cocoatouch.foundation.NSObject
+import android.view.View
 
 
 open class UIResponder: NSObject() {

@@ -1,4 +1,5 @@
 package com.starkbank.cocoatouch.uikit
+import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
 import com.starkbank.cocoatouch.foundation.NSIndexPath
 import android.widget.AdapterView.OnItemClickListener
@@ -7,7 +8,6 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.view.ViewGroup
 import android.view.View
-import com.starkbank.cocoatouch.annotation.IBActionParser
 
 
 class UITableView: UIScrollView() {
@@ -47,6 +47,7 @@ class UITableView: UIScrollView() {
         val inflater = LayoutInflater.from(context)
         cell.widget = inflater.inflate(id, this.listView(), false)
         IBOutletParser.parse(cell)
+        IBActionParser.parse(cell)
         return cell
     }
 

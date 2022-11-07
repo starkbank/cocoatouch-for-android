@@ -1,7 +1,7 @@
 package com.starkbank.cocoatouch.animation
+import androidx.fragment.app.Fragment
 import android.animation.Animator
 import android.graphics.Point
-import androidx.fragment.app.Fragment
 
 
 open class NoneTransition : Transition {
