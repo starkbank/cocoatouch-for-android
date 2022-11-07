@@ -1,7 +1,9 @@
 package com.starkbank.cocoatouch.uikit
-import com.starkbank.cocoatouch.foundation.NSMutableArray
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import com.starkbank.cocoatouch.compability.BackPressedParser
+import com.starkbank.cocoatouch.foundation.NSMutableArray
+import java.lang.reflect.Method
 
 
 open class UIActivity: AppCompatActivity() {
@@ -31,6 +33,24 @@ open class UIActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(storyboardId())
         initApplication()
+    }
+
+    override fun onBackPressed() {
+        var lastController: UIViewController? = null
+        if (this.navigationController.modalViewControllers.count() > 0)
+            lastController = this.navigationController.modalViewControllers.lastObject()
+        else if (this.navigationController.pushViewControllers.count() > 1)
+            lastController = this.navigationController.pushViewControllers.lastObject()
+
+        val method: Method? = BackPressedParser.getMethod(lastController)
+        if (method == null)
+            UIApplication.sharedApplication().activity().finish()
+
+        try {
+            method?.invoke(lastController, UIButton())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onRestart() {

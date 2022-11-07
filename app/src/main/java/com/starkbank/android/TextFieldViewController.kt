@@ -1,6 +1,7 @@
 package com.starkbank.android
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBOutlet
+import com.starkbank.cocoatouch.compability.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UITextField
 import com.starkbank.cocoatouch.uikit.UIViewController
@@ -25,6 +26,10 @@ class TextFieldViewController: UIViewController() {
     //
     // Actions
     //
+    @IBAction(DefaultActions.onBackPressed) fun back(sender: UIButton) {
+        this.navigationController?.popViewController(true)
+    }
+
     @IBAction(R.id.textfield_bfr) fun becomeFirstResponder(sender: UIButton) {
         this.textField1.becomeFirstResponder()
     }

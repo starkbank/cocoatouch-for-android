@@ -7,7 +7,7 @@ import com.starkbank.cocoatouch.uikit.UIApplication.sharedApplication
 
 class UINavigationController: UIViewController() {
 
-    private var pushViewControllers = NSMutableArray<UIViewController>()
+    internal var pushViewControllers = NSMutableArray<UIViewController>()
     internal var modalViewControllers = NSMutableArray<UIViewController>()
     internal var pausedViewControllers: NSMutableArray<UIViewController>? = null
 
