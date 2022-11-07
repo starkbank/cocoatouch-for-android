@@ -1,5 +1,9 @@
 package com.starkbank.android
 import android.content.res.Resources
+import com.starkbank.android.activityindicator.ActivityIndicatorViewController
+import com.starkbank.android.tableview.TableViewCell
+import com.starkbank.android.tableview.TableViewController
+import com.starkbank.android.textfield.TextFieldViewController
 import com.starkbank.cocoatouch.uikit.UIApplicationDelegate
 import com.starkbank.cocoatouch.uikit.UIStoryboard
 import com.starkbank.cocoatouch.uikit.UITableViewCell
@@ -29,6 +33,7 @@ class MainStoryboard: UIStoryboard() {
             R.layout.mainviewcontroller -> MainViewController()
             R.layout.textfieldviewcontroller -> TextFieldViewController()
             R.layout.tableviewcontroller -> TableViewController()
+            R.layout.activityindicatorviewcontroller -> ActivityIndicatorViewController()
             else -> throw Resources.NotFoundException()
         }
     }

@@ -1,4 +1,5 @@
-package com.starkbank.android
+package com.starkbank.android.tableview
+import com.starkbank.android.R
 import com.starkbank.cocoatouch.annotation.IBOutlet
 import com.starkbank.cocoatouch.uikit.UILabel
 import com.starkbank.cocoatouch.uikit.UITableViewCell

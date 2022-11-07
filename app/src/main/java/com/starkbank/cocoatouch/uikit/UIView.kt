@@ -17,11 +17,19 @@ open class UIView: UIResponder() {
     }
 
     open fun setHidden(hidden: Boolean) {
-        this.fragment!!.isHidden = hidden
+        if (this.fragment != null) {
+            this.fragment!!.isHidden = hidden
+            return
+        }
+        this.widget.visibility = if (hidden) View.INVISIBLE else View.VISIBLE
     }
 
     open fun setUserInteractionEnabled(enabled: Boolean) {
-        this.fragment!!.setUserInteractionEnabled(enabled)
+        if (this.fragment != null) {
+            this.fragment!!.setUserInteractionEnabled(enabled)
+            return
+        }
+        this.widget.isEnabled = enabled
     }
 
     //

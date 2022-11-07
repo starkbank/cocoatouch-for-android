@@ -17,6 +17,10 @@ class MainViewController: UIViewController() {
         presentViewController(R.layout.tableviewcontroller)
     }
 
+    @IBAction(R.id.mainActivityIndicator) fun presentSpinnerViewController(sender: UIButton) {
+        presentViewController(R.layout.activityindicatorviewcontroller)
+    }
+
     //
     // Helpers
     //
