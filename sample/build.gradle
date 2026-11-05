@@ -24,7 +24,14 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        minified {
+            initWith buildTypes.debug
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-minified-tests.pro'
+            matchingFallbacks = ['debug']
+        }
     }
+    testBuildType = findProperty('sampleTestBuildType') ?: 'debug'
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
