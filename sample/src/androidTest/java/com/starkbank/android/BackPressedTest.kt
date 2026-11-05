@@ -34,7 +34,7 @@ class BackPressedTest {
         activityRule.scenario.onActivity { activity ->
             val rootFragment = activity.supportFragmentManager.fragments.first() as UIFragment
             val navigationController = rootFragment.viewController!!.navigationController!!
-            assertEquals(1, navigationController.pushViewControllers.count())
+            assertEquals(1, navigationController.viewControllers.size)
         }
     }
 }

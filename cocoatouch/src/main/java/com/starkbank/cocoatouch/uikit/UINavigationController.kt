@@ -7,6 +7,14 @@ import androidx.fragment.app.FragmentManager
 
 class UINavigationController: UIViewController() {
 
+    val viewControllers: ArrayList<UIViewController>
+        get() {
+            val array = arrayListOf<UIViewController>()
+            array.addAll(pushViewControllers)
+            array.addAll(modalViewControllers)
+            return array
+        }
+
     internal var pushViewControllers = NSMutableArray<UIViewController>()
     internal var modalViewControllers = NSMutableArray<UIViewController>()
     internal var pausedViewControllers: NSMutableArray<UIViewController>? = null
