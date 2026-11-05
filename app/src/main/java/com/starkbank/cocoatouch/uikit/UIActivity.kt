@@ -1,6 +1,7 @@
 package com.starkbank.cocoatouch.uikit
 import com.starkbank.cocoatouch.compability.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import java.lang.reflect.Method
 import android.os.Bundle
@@ -33,9 +34,14 @@ open class UIActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(storyboardId())
         initApplication()
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                dispatchBackPressed()
+            }
+        })
     }
 
-    override fun onBackPressed() {
+    private fun dispatchBackPressed() {
         var lastController: UIViewController? = null
         if (this.navigationController.modalViewControllers.count() > 0)
             lastController = this.navigationController.modalViewControllers.lastObject()
