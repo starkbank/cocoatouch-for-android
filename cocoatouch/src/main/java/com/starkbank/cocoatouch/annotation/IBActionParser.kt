@@ -1,9 +1,11 @@
 package com.starkbank.cocoatouch.annotation
-import com.starkbank.cocoatouch.uikit.UIResponder
-import com.starkbank.cocoatouch.uikit.UIButton
-import com.starkbank.cocoatouch.compability.DefaultActions
-import java.lang.reflect.Method
+import android.view.View
 import android.widget.Button
+import com.starkbank.cocoatouch.compatibility.DefaultActions
+import com.starkbank.cocoatouch.uikit.UIButton
+import com.starkbank.cocoatouch.uikit.UIResponder
+import com.starkbank.cocoatouch.uikit.UIView
+import java.lang.reflect.Method
 
 
 object IBActionParser {
@@ -24,10 +26,33 @@ object IBActionParser {
 
             val button: Any = controller.viewWithTag(action.value)
             if (Button::class.java.isAssignableFrom(button.javaClass)) {
-                return parse(button as Button, method, controller)
+                return parse(
+                    button as Button,
+                    method,
+                    controller
+                )
+            }
+            if (View::class.java.isAssignableFrom(button.javaClass)){
+                return parse(
+                    button as View,
+                    method,
+                    controller
+                )
             }
         }
     }
+
+    private fun parse(view: View, method: Method, controller: UIResponder) {
+        view.setOnClickListener {
+            try {
+                val uiview = UIView()
+                method.invoke(controller, uiview)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 
     private fun parse(button: Button, method: Method, controller: UIResponder) {
         button.setOnClickListener {

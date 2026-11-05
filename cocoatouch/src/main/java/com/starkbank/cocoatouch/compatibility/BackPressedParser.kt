@@ -1,4 +1,4 @@
-package com.starkbank.cocoatouch.compability
+package com.starkbank.cocoatouch.compatibility
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.uikit.UIResponder
 import java.lang.reflect.Method
@@ -10,7 +10,8 @@ object BackPressedParser {
         if (controller == null)
             return null
 
-        val methods = controller.javaClass.declaredMethods
+        val methods = controller.javaClass.declaredMethods + controller.javaClass.superclass.declaredMethods
+
         for (method in methods) {
             if (isTheRightMethod(method)) {
                 return method

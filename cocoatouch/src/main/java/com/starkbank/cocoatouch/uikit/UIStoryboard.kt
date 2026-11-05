@@ -39,6 +39,10 @@ open class UIStoryboard: UIActivity() {
         return UITableViewCell()
     }
 
+    open fun collectionViewCellForIdentifier(identifier: Int): UICollectionViewCell {
+        return UICollectionViewCell()
+    }
+
     open fun applicationDelegate(): UIApplicationDelegate? {
         return null
     }

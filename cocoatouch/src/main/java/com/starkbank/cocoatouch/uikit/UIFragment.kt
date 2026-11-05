@@ -1,33 +1,34 @@
 package com.starkbank.cocoatouch.uikit
+import android.animation.Animator
+import android.graphics.Point
+import android.os.Bundle
+import android.view.*
+import androidx.fragment.app.Fragment
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
-import com.starkbank.cocoatouch.animation.NoneTransition
-import androidx.fragment.app.Fragment
-import android.animation.Animator
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.ViewGroup
-import android.graphics.Point
-import android.view.Display
-import android.view.View
-import android.os.Bundle
 
 
 class UIFragment : Fragment() {
 
     var identifier = 0
     var viewController: UIViewController? = null
-    var transition = NoneTransition()
+    var transition = com.starkbank.cocoatouch.animation.NoneTransition()
     var animated = false
-    private var container: View? = null
+    internal var container: View? = null
+
+    fun setBackgroundColor(color: UIColor){
+        container?.setBackgroundColor(color.colorInt)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         if (this.identifier == 0) {
             return View(UIApplication.sharedApplication().context())
         }
         this.container = inflater.inflate(this.identifier, container, false)
-        IBOutletParser.parse(this.viewController!!)
-        IBActionParser.parse(this.viewController!!)
+        this.viewController?.let { viewController ->
+            IBOutletParser.parse(viewController)
+            IBActionParser.parse(viewController)
+        }
         this.viewController?.viewDidLoad()
 
         // This code is used to unable to touch UIViewController after a transition

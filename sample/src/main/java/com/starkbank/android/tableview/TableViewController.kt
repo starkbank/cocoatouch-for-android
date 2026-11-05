@@ -2,7 +2,7 @@ package com.starkbank.android.tableview
 import com.starkbank.android.R
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBOutlet
-import com.starkbank.cocoatouch.compability.DefaultActions
+import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.foundation.NSIndexPath
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.uikit.*

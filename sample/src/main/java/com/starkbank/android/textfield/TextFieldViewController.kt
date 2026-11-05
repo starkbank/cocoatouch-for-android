@@ -2,7 +2,7 @@ package com.starkbank.android.textfield
 import com.starkbank.android.R
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBOutlet
-import com.starkbank.cocoatouch.compability.DefaultActions
+import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UITextField
 import com.starkbank.cocoatouch.uikit.UIViewController

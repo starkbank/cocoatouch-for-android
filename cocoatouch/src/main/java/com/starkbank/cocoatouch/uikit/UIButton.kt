@@ -1,20 +1,42 @@
 package com.starkbank.cocoatouch.uikit
-import android.widget.Button
+import android.content.res.ColorStateList
 import android.view.View
+import android.widget.Button
+import androidx.core.graphics.drawable.DrawableCompat
 
 
 open class UIButton: UIControl() {
 
+    private var _tintColor: UIColor = UIColor("#ffffff")
+
+    private fun getButton(): Button{
+        return (widget as Button)
+    }
+
     open fun setTitle(title: String, state: UIControlState) {
-        (this.widget as Button).text = title
+        getButton().text = title
     }
 
     open fun titleForState(state: UIControlState): String {
-        return (this.widget as Button).text.toString()
+        return getButton().text.toString()
     }
 
-    override fun setHidden(hidden: Boolean) {
-        super.setHidden(hidden)
-        (this.widget as Button).visibility = if (hidden) View.INVISIBLE else View.VISIBLE
+    open fun setTitleColor(color: UIColor, state: UIControlState){
+        val intColor = color.colorInt
+        getButton().setTextColor(intColor)
+        getButton().compoundDrawableTintList = ColorStateList.valueOf(intColor)
+    }
+
+    open fun setImage(image: UIImage, state: UIControlState){
+        getButton().setBackgroundResource(image.imageRes)
+        setTintColor(_tintColor)
+    }
+
+    open fun setTintColor(color: UIColor){
+        _tintColor = color
+        val colorInd = color.colorInt
+        val drawable = DrawableCompat.wrap(getButton().background)
+        DrawableCompat.setTint(drawable, colorInd)
+        getButton().background = drawable
     }
 }

@@ -1,19 +1,35 @@
 package com.starkbank.cocoatouch.uikit
-import androidx.appcompat.widget.AppCompatEditText
-import android.view.inputmethod.InputMethodManager
-import android.graphics.drawable.Drawable
-import android.util.AttributeSet
-import android.text.TextWatcher
-import android.view.MotionEvent
+
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.text.Editable
+import android.text.TextWatcher
+import android.text.method.HideReturnsTransformationMethod
+import android.text.method.PasswordTransformationMethod
+import android.util.AttributeSet
 import android.view.KeyEvent
-import android.app.Activity
+import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.AppCompatEditText
+import com.starkbank.cocoatouch.compatibility.UIKeyInput
 
 
-class UITextField: UIControl() {
+open class UITextField : UIControl() {
+
+    var isSecureTextEntry: Boolean
+        get() {
+            return editText().transformationMethod == PasswordTransformationMethod.getInstance()
+        }
+        set(value) {
+            val cursorPos = editText().selectionStart
+            if(value)
+                editText().transformationMethod = PasswordTransformationMethod.getInstance()
+            else
+                editText().transformationMethod = HideReturnsTransformationMethod.getInstance()
+            editText().setSelection(cursorPos)
+        }
 
     private var delegate: UITextFieldDelegate? = null
     private var observer: TextWatcher? = null
@@ -25,6 +41,7 @@ class UITextField: UIControl() {
 
     fun init() {
         originalBackground = this.editText().background
+        addListeners()
     }
 
     fun setText(text: String) {
@@ -60,16 +77,14 @@ class UITextField: UIControl() {
         textFieldDidStartEditing()
         this.editText().isFocusableInTouchMode = true
         this.editText().requestFocus()
-        val activity: Activity = UIApplication.sharedApplication().activity()
-        val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+        UIKeyInput.getInputMethodManager()?.showSoftInput(this.editText(), InputMethodManager.SHOW_IMPLICIT)
     }
 
     fun resignFirstResponder() {
         textFieldDidFinishEditing()
-        val activity: Activity = UIApplication.sharedApplication().activity()
-        val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(this.editText().windowToken, 0)
+        this.editText().isFocusableInTouchMode = false
+        this.editText().clearFocus()
+        UIKeyInput.getInputMethodManager()?.hideSoftInputFromWindow(this.editText().windowToken, 0)
     }
 
     //
@@ -92,7 +107,7 @@ class UITextField: UIControl() {
     }
 
     private fun addBackListener() {
-        this.editText().setOnBackListener(object: BackEditText.OnBackListener {
+        this.editText().setOnBackListener(object : BackEditText.OnBackListener {
             override fun onBack(keyCode: Int, event: KeyEvent?) {
                 textFieldDidFinishEditing()
             }
@@ -121,7 +136,7 @@ class UITextField: UIControl() {
         val textField = this
         this.editText().setOnKeyListener(object : View.OnKeyListener {
             override fun onKey(view: View?, keyCode: Int, event: KeyEvent?): Boolean {
-                if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                if (keyCode == KeyEvent.KEYCODE_ENTER && event?.action == MotionEvent.ACTION_UP) {
                     var shouldResign = true
                     if (delegate != null)
                         shouldResign = delegate!!.textFieldShouldReturn(textField)
@@ -135,20 +150,18 @@ class UITextField: UIControl() {
     }
 
     private fun addTouchListener() {
-        this.editText().setOnTouchListener(object : View.OnTouchListener {
-            override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-                if (event?.action == MotionEvent.ACTION_UP) {
-                    becomeFirstResponder()
-                }
-                return true
+        this.editText().setOnTouchListener { v, event ->
+            if (event?.action == MotionEvent.ACTION_UP) {
+                becomeFirstResponder()
             }
-        })
+            false
+        }
     }
 
     private fun addFocusListener() {
         this.editText().onFocusChangeListener = object : View.OnFocusChangeListener {
             override fun onFocusChange(v: View, hasFocus: Boolean) {
-                if(!hasFocus)
+                if (!hasFocus)
                     textFieldDidFinishEditing()
             }
         }
@@ -170,16 +183,13 @@ class UITextField: UIControl() {
     }
 }
 
-open class BackEditText: AppCompatEditText {
+open class BackEditText @JvmOverloads constructor(context: Context?, attrs: AttributeSet?) :
+    AppCompatEditText(context!!, attrs) {
 
     private var listener: OnBackListener? = null
 
     interface OnBackListener {
         fun onBack(keyCode: Int, event: KeyEvent?)
-    }
-
-    constructor(context: Context?, attrs: AttributeSet?) : super(context!!, attrs) {
-
     }
 
     open fun setOnBackListener(`object`: OnBackListener?) {

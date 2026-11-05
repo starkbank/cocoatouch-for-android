@@ -1,7 +1,7 @@
 package com.starkbank.cocoatouch.uikit
 
 
-class UIActivityIndicatorView: UIView() {
+open class UIActivityIndicatorView: UIView() {
 
     fun stopAnimating() {
         this.setHidden(true)

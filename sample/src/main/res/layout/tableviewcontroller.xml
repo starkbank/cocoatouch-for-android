@@ -4,10 +4,9 @@
     android:layout_height="match_parent"
     android:background="#e7e7e7">
 
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/tableview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </ListView>
+        android:layout_height="match_parent" />
 
 </LinearLayout>
