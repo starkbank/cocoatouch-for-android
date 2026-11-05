@@ -16,7 +16,7 @@ object UIApplication: UIResponder() {
 
     internal fun attach(activity: UIActivity) {
         this.activity = activity
-        this.storyboard = activity as? UIStoryboard
+        (activity as? UIStoryboard)?.let { this.storyboard = it }
         this.applicationContext = activity.applicationContext
         UIImagePickerController.shared = UIImagePickerController()
         UIDocumentPickerViewController.shared = UIDocumentPickerViewController()

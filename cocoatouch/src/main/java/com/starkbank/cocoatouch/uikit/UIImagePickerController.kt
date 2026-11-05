@@ -105,7 +105,7 @@ class UIImagePickerController {
     }
 
     private fun getTmpFileUri(): Uri {
-        return tmpFileUri(UIApplication.context())
+        return tmpFileUri(UIApplication.applicationContext!!)
     }
 
 }

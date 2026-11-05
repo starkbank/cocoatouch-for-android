@@ -34,10 +34,10 @@ open class UIActivity: AppCompatActivity() {
     }
 
     fun setRootViewController(viewController: UIViewController) {
-        val activity = UIApplication.sharedApplication().activity()
+        if (UIApplication.activity == null) return
         if(!isInBackground) {
-            for (fragment in activity.supportFragmentManager.fragments) {
-                activity.supportFragmentManager.beginTransaction().remove(fragment).commitAllowingStateLoss()
+            for (fragment in this.supportFragmentManager.fragments) {
+                this.supportFragmentManager.beginTransaction().remove(fragment).commitAllowingStateLoss()
             }
             val viewControllers = NSMutableArray<UIViewController>()
             viewControllers.addObject(viewController)
@@ -69,7 +69,7 @@ open class UIActivity: AppCompatActivity() {
             lastController = this.navigationController.pushViewControllers.lastObject()
         val method: Method? = BackPressedParser.getMethod(lastController)
         if (method == null)
-            UIApplication.sharedApplication().activity().finish()
+            this.finish()
 
         try {
             method?.invoke(lastController, UIButton())

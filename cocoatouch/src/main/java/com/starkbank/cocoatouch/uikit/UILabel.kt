@@ -23,7 +23,7 @@ open class UILabel : UIView() {
     var font: UIFont? = null
         set(font) {
             font?.let {
-                val typeface = ResourcesCompat.getFont(UIApplication.context(), it.name)
+                val typeface = ResourcesCompat.getFont(UIApplication.applicationContext!!, it.name)
                 getTextView().textSize = it.size
                 getTextView().typeface = typeface
             }

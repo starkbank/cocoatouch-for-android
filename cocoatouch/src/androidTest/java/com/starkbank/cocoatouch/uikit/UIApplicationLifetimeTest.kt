@@ -12,6 +12,8 @@ import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.foundation.NSMutableArray
+import com.starkbank.cocoatouch.foundation.NotificationCenter
 import com.starkbank.cocoatouch.foundation.UserDefaults
 import com.starkbank.cocoatouch.navigation
 import org.junit.After
@@ -87,6 +89,54 @@ class UIApplicationLifetimeTest {
         scenario.close()
         instrumentation.runOnMainSync { stack.pushViewController(PushedViewController(), false) }
         assertEquals(1, stack.viewControllers.size)
+    }
+
+    @Test
+    fun setRootViewControllerAfterCloseIsIgnored() {
+        lateinit var stack: UINavigationController
+        val activity = scenarioActivity()
+        scenario.onActivity { stack = navigation(it) }
+        scenario.close()
+        instrumentation.runOnMainSync { activity.setRootViewController(PushedViewController()) }
+        assertEquals(1, stack.viewControllers.size)
+    }
+
+    @Test
+    fun navigationAfterCloseLeavesTheStackUntouched() {
+        lateinit var stack: UINavigationController
+        scenario.onActivity { stack = navigation(it) }
+        scenario.close()
+        instrumentation.runOnMainSync {
+            stack.presentViewController(PushedViewController(), false)
+            stack.setViewControllers(NSMutableArray<UIViewController>().apply { addObject(PushedViewController()) }, false)
+            stack.popViewController(false)
+            stack.popToRootViewController(false)
+            stack.dismissModalViewControllerAnimated(false)
+        }
+        assertEquals(1, stack.viewControllers.size)
+    }
+
+    @Test
+    fun readersWorkAfterClose() {
+        scenario.close()
+        var notified = false
+        instrumentation.runOnMainSync {
+            NotificationCenter.addObserver({ notified = true }, "afterClose")
+            NotificationCenter.postNotification("afterClose")
+            UIPasteboard.general.string = "afterClose"
+        }
+        instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync { NotificationCenter.removeObserver() }
+        assertEquals("afterClose", UIPasteboard.general.string)
+        assertEquals(true, notified)
+    }
+
+    @Test
+    fun stopStartKeepsTheSamePicker() {
+        val picker = UIImagePickerController.shared
+        scenario.moveToState(Lifecycle.State.CREATED)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        assertSame(picker, UIImagePickerController.shared)
     }
 
     @Test
