@@ -20,13 +20,13 @@ class NotificationCenter {
                 }
             }
             broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.context()).registerReceiver(it, IntentFilter(name))
+                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).registerReceiver(it, IntentFilter(name))
             }
         }
 
         fun removeObserver() {
             broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.context()).unregisterReceiver(
+                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(
                     it
                 )
             }
@@ -38,7 +38,7 @@ class NotificationCenter {
             //        for ((key, value): Map.Entry<String, String> in params.entrySet()) {
             //            intent.putExtra(key, value)
             //        }
-            LocalBroadcastManager.getInstance(UIApplication.context()).sendBroadcast(intent)
+            LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).sendBroadcast(intent)
         }
     }
 }

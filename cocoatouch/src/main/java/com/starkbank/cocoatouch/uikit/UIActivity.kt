@@ -51,9 +51,10 @@ open class UIActivity: AppCompatActivity() {
     // Android Methods
     //
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         prepareLaunch()
+        super.onCreate(savedInstanceState)
         setContentView(storyboardId())
+        UIApplication.attach(this)
         initApplication()
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { dispatchBackPressed() }
@@ -77,13 +78,21 @@ open class UIActivity: AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (UIApplication.activity === this) return
+        UIApplication.attach(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        UIApplication.detach(this)
+    }
+
     override fun onRestart() {
         super.onRestart()
         val application = UIApplication.sharedApplication()
         application.delegate?.applicationDidBecomeActive(application)
-        if(application.activity?.supportFragmentManager?.isDestroyed == true) {
-            application.activity = this
-        }
         finishPausedTransitions()
         isInBackground = false
     }

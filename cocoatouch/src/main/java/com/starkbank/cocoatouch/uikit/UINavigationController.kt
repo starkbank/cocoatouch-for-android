@@ -21,6 +21,7 @@ open class UINavigationController: UIViewController() {
     internal var pausedViewControllers: NSMutableArray<UIViewController>? = null
 
     open fun pushViewController(viewController: UIViewController, animated: Boolean) {
+        if (UIApplication.activity == null) return
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         viewController.navigationController = this
         viewController.setPresentingViewController(null)
@@ -30,6 +31,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun presentViewController(viewController: UIViewController, animated: Boolean) {
+        if (UIApplication.activity == null) return
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         viewController.navigationController = this
         viewController.setPresentingViewController(null)
@@ -39,6 +41,7 @@ open class UINavigationController: UIViewController() {
     }
 
     fun setViewControllers(viewControllers: NSMutableArray<UIViewController>, animated: Boolean) {
+        if (UIApplication.activity == null) return
         this.pushViewControllers = NSMutableArray()
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         for (viewController in viewControllers) {
@@ -56,6 +59,7 @@ open class UINavigationController: UIViewController() {
     open fun popViewController(animated: Boolean) {
         val tabs = lastViewController(this.pushViewControllers) as? UITabBarController
         if (tabs?.popInTab(animated, null) == true) return
+        if (UIApplication.activity == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -81,6 +85,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun popToRootViewController(animated: Boolean) {
+        if (UIApplication.activity == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -104,6 +109,7 @@ open class UINavigationController: UIViewController() {
 
 
     internal fun presentModalViewController(viewController: UIViewController, animated: Boolean) {
+        if (UIApplication.activity == null) return
         val activity = sharedApplication().activity()
         //
         // Don' let push items to fragment when activity is finishing or destroyed
@@ -151,6 +157,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun dismissModalViewControllerAnimated(animated: Boolean) {
+        if (UIApplication.activity == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -169,6 +176,7 @@ open class UINavigationController: UIViewController() {
     }
 
     internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
+        if (UIApplication.activity == null) return
         val activity = sharedApplication().activity()
         //
         // Don' let push items to fragment when activity is finishing or destroyed

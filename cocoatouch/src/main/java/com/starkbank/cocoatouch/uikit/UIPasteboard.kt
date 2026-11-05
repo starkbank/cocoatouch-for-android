@@ -12,7 +12,7 @@ class UIPasteboard {
     set(value) {
         field = value
         val clip = ClipData.newPlainText("general", value)
-        val clipboard = UIApplication.context().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = UIApplication.applicationContext!!.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(clip)
     }
 }

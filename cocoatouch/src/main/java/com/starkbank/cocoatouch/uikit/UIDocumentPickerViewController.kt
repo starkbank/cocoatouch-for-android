@@ -17,6 +17,7 @@ class UIDocumentPickerViewController {
 
     companion object {
         lateinit var shared: UIDocumentPickerViewController
+            internal set
     }
 
     var delegate: UIDocumentPickerDelegate? = null

@@ -9,6 +9,14 @@ import com.starkbank.cocoatouch.uikit.UIViewController
 
 class TestStoryboard : UIStoryboard() {
 
+    companion object {
+        val launchEvents: MutableList<String> = mutableListOf()
+    }
+
+    override fun prepareLaunch() {
+        launchEvents.add("prepareLaunch")
+    }
+
     fun navigation(): UINavigationController {
         return navigationController
     }

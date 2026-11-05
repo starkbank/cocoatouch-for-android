@@ -31,6 +31,7 @@ class UIImagePickerController {
 
     companion object {
         lateinit var shared: UIImagePickerController
+            internal set
     }
 
     private var selectImageFromGalleryResult: ActivityResultLauncher<String>

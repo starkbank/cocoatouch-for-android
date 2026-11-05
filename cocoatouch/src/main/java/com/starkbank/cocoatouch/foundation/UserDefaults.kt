@@ -9,7 +9,7 @@ class UserDefaults {
     // Private Methods
     //
     private fun context(): Context {
-        return UIApplication.context()
+        return UIApplication.applicationContext!!
     }
 
     private fun preferences(key: String): SharedPreferences {
