@@ -419,10 +419,10 @@ You can set any ViewController you want.
 | `IBAction` | `@IBAction` | yes | Validated at bind |
 | `IBOutlet` | `@IBOutlet` | yes | Takes an `R.id` |
 | `Optional` | none | Android-specific | The library's `@Optional` annotation on functions and accessors, not Swift's `Optional` type |
-| `IBActionParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
-| `IBOutletParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
-| `BackPressedParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
-| `DefaultActions` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `IBActionParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `IBOutletParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `BackPressedParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `DefaultActions` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
 | `WKUserScript.WKUserScriptInjectionTime` | `WKUserScriptInjectionTime` | yes | Nested enum here |
 | `InternalCocoaTouchApi` | none | Android-specific | Opt-in marker for the Android access |
 

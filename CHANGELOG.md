@@ -43,49 +43,20 @@ PATCH for backwards-compatible fixes.
 - `tabContainerId()`
 - `UITabBarController.popInTab()`
 - `UINavigationController.viewControllers`
+- Library resources prefixed with `cocoatouch_`, including `@id/cocoatouch_tab_container` for tab layouts
 
 ### Changed
-Compared with 0.0.1, the only public predecessor, the core now matches the framework the Stark apps ship, with these behaviour changes:
-- `UIApplication` attaches to the live activity on start and releases it on destroy. `UIApplication.activity`/`storyboard`, `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are filled by the library and read-only for apps, which must delete their own assignments.
-- `UIActivity.prepareLaunch()` runs before `super.onCreate`.
-- Navigation requested after the activity is destroyed is ignored.
-- Default styles come from `UIAppearance`.
-- A text field keeps a single watcher, and `setText` does not notify it.
-- `popToRootViewController` now removes every pushed controller from the back stack.
-- Paused navigation transitions are drained once, in `onStart` after the activity re-attaches, and no longer in `onRestart`.
-- `viewDidDisappear` is forwarded to child view controllers.
-- `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited.
-- The `@IBAction` sender is the widget that was clicked.
-- A missing outlet throws `IllegalStateException` naming the field.
-- An outlet bound before the controller has a view throws `IllegalStateException` with "bound before <Controller> has a view", distinct from "not found in <Controller>".
-- `@IBAction` is validated at bind: exactly one sender parameter, a concrete sender type with a public no-argument constructor, and an existing view id. Each failure throws `IllegalStateException` naming the controller, method and id.
-- An exception thrown by an app's `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
-- `@IBAction` back handlers are validated at bind and must receive a `UIButton`.
-- A sender parameter type that is not a `UIResponder` must receive a `UIView`.
-- A same-id `@IBAction` declared in a base class and in a subclass binds the subclass handler.
-- A push requested while the activity is stopped is queued before the attached-activity guards, so it survives a finishing activity in front.
-- Back on the root reaches the root controller.
-- Back without a handler finishes the Activity that dispatched it.
-- `NSMutableArray.removeObject` removes every occurrence.
-- `DispatchGroup.notify` delivers asynchronously on the requested queue, and fires on an empty or already completed group.
-- Each `DispatchGroup.notify` block runs once and is discarded, so it does not fire again on the next cycle.
-- `DispatchGroup.leave()` without `enter()` throws `IllegalStateException`.
-- A `notify` registered before the first `enter` fires immediately and does not wait for the next balance, as in GCD.
-- The section header font coming from `UIAppearance` also applies `textSize`; before, only the typeface changed.
-- `initApplication` is protected.
-- Resources are prefixed with `cocoatouch_`, and tab layouts use `@id/cocoatouch_tab_container`.
+Compared with 0.0.1, the only public predecessor:
+- A `UITextField` keeps a single `TextWatcher`, and a programmatic `setText` does not notify it.
+- `popToRootViewController` removes every pushed controller; 0.0.1 popped back to the root's class name.
+- Paused navigation transitions are drained once, after the activity re-attaches in `onStart`, and no longer in `onRestart`.
+- `viewDidDisappear` is forwarded to child controllers as `viewDidDisappear`; 0.0.1 forwarded it as `viewWillDisappear`.
+- `NSMutableArray.removeObject` removes every occurrence, and navigation pops are positional.
+- Back with no handler finishes the Activity that dispatched it, and back handlers are validated at bind and must receive a `UIButton`.
+- `initApplication` is `protected`.
 - The package `compability` is now `compatibility`.
-- `UITableView` requires a `RecyclerView` in the layout; a `ListView` breaks.
-- `UIApplication.activity` and `storyboard` require the `@InternalCocoaTouchApi` opt-in.
-
-### Removed
-- `UIDatePicker`
-- `DocumentScannerController`
-- `UIImageView.load`
-- `UserDefaults.set<T>`/`object`: the app encodes the value and calls `set(string, key)`; the persisted format does not change
-- `UISearchBar.searchController`
-- `installSplashScreen`, replaced by `prepareLaunch()`
-- Cursor tint and handles of `UISearchBar` below API 29
+- `UITableView` needs a `RecyclerView` in the layout; a `ListView` breaks.
+- `UIApplication.activity`/`storyboard` need `@OptIn(InternalCocoaTouchApi::class)`.
 
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.
@@ -102,3 +73,25 @@ Each one is pinned by a test that fails when the behaviour changes.
 - `UIApplication` re-attaches only on `onStart`: if the attached `UIActivity` is destroyed while another one is already STARTED (translucent on top, multi-window), the survivor has no `UIApplication.activity` until it restarts, and each re-attach registers extra launchers on it.
 - `popToRootViewController` also empties the pushes made inside a tab of a root `UITabBarController`, because `popBackStack(null, INCLUSIVE)` clears the whole back stack of the Activity.
 - After a push queued while the app is in the background, the fragments already on screen receive `viewDidAppear` without `viewWillAppear` on return: the queue drains in `onStart` after `super.onStart` and no longer turns `isNotificationsEnabled` on when queueing.
+
+### Differences from the in-house framework this release was extracted from
+This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
+- `UIApplication` attaches in `onCreate`, re-attaches in `onStart` and releases on destroy.
+- `UIApplication.activity`/`storyboard`, `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are filled by the library and read-only for apps, which must delete their own assignments.
+- `UIActivity.prepareLaunch()` runs before `super.onCreate`.
+- Navigation requested after the activity is destroyed is ignored.
+- Default styles come from `UIAppearance`, and the section-header font also sets the text size; the previous copy set only the typeface.
+- `UISearchBarDelegate` replaces the product search hook.
+- `@IBAction` is validated at bind: exactly one sender parameter, a concrete sender type with a public no-argument constructor, and an existing view id, each failure an `IllegalStateException` naming the controller, method and id.
+- An exception thrown by an `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
+- `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked.
+- A missing outlet throws `IllegalStateException` naming the field, and an outlet bound before the controller has a view throws one with "bound before <Controller> has a view".
+- A same-id `@IBAction` declared in a base class and in a subclass binds the subclass handler.
+- A sender parameter type that is not a `UIResponder` must receive a `UIView`.
+- A push requested while the activity is stopped is queued before the attached-activity guards, so it survives a finishing activity in front.
+- `DispatchGroup.notify` delivers asynchronously on the requested queue, fires at once on an empty or already finished group, and runs each block once.
+- `DispatchGroup.leave()` without `enter()` throws `IllegalStateException`.
+- A `DispatchGroup.notify` registered before the first `enter` fires at once and does not wait for the next balance, as in GCD.
+- The preference file and the `FileProvider` authority are derived from `packageName`.
+- Back on the root reaches the root controller.
+- Not included in the library: `UIDatePicker`, `DocumentScannerController`, `UIImageView.load`, `UserDefaults.set<T>`/`object` (encode the value and call `set(string, key)`; the persisted format is unchanged), `UISearchBar.searchController`, `installSplashScreen` (now `prepareLaunch()`), and the cursor and handle tint of `UISearchBar` below API 29.
