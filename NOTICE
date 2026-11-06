@@ -1,0 +1,6 @@
+This repository bundles the following third-party work.
+
+Droid Sans (cocoatouch/src/androidTest/res/font/cocoatouch_test_font.ttf)
+Copyright (C) 2008 The Android Open Source Project
+Licensed under the Apache License, Version 2.0; see third_party/droid-sans/LICENSE.
+Used only by the library's instrumented tests; it is not part of the published artifact.
