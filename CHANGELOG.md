@@ -56,7 +56,10 @@ Compared with 0.0.1, the only public predecessor:
 - `initApplication` is `protected`.
 - The package `compability` is now `compatibility`.
 - `UITableView` needs a `RecyclerView` in the layout; a `ListView` breaks.
-- `UIApplication.activity`/`storyboard` need `@OptIn(InternalCocoaTouchApi::class)`.
+- `UIApplication.activity`/`storyboard` are readable behind `@OptIn(InternalCocoaTouchApi::class)`; 0.0.1 kept them internal.
+- `@IBAction` is validated at bind: exactly one sender parameter, a concrete sender type with a public no-argument constructor, and an existing view id, each failure an `IllegalStateException` naming the controller, method and id; 0.0.1 bound without checks.
+- An exception thrown by an `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
+- `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked; 0.0.1 read only the leaf class and passed a fresh `UIButton`.
 
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.
@@ -81,11 +84,11 @@ This release is extracted from the framework copy the Stark apps ship; teams mov
 - `UIActivity.prepareLaunch()` runs before `super.onCreate`.
 - Navigation requested after the activity is destroyed is ignored.
 - Default styles come from `UIAppearance`, and the section-header font also sets the text size; the previous copy set only the typeface.
-- `UISearchBarDelegate` replaces the product search hook.
+- `UISearchBarDelegate` replaces the in-house search callback.
 - `@IBAction` is validated at bind: exactly one sender parameter, a concrete sender type with a public no-argument constructor, and an existing view id, each failure an `IllegalStateException` naming the controller, method and id.
 - An exception thrown by an `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
 - `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked.
-- A missing outlet throws `IllegalStateException` naming the field, and an outlet bound before the controller has a view throws one with "bound before <Controller> has a view".
+- A missing outlet throws `IllegalStateException` naming the field ("not found in <Controller>"), and an outlet bound before the controller has a view throws one with "bound before <Controller> has a view".
 - A same-id `@IBAction` declared in a base class and in a subclass binds the subclass handler.
 - A sender parameter type that is not a `UIResponder` must receive a `UIView`.
 - A push requested while the activity is stopped is queued before the attached-activity guards, so it survives a finishing activity in front.
