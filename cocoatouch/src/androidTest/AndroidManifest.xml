@@ -7,6 +7,10 @@
             android:name="com.starkbank.cocoatouch.TestStoryboard"
             android:exported="false" />
 
+        <activity
+            android:name="com.starkbank.cocoatouch.PlainActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

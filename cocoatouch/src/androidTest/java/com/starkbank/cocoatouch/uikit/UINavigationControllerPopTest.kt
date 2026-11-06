@@ -38,15 +38,18 @@ class UINavigationControllerPopTest {
 
     @Test
     fun popRemovesOnlyTheTopWhenTheSameControllerIsPushedTwice() {
+        var backStackBeforePop = 0
         onMain {
             val repeated = storyboard.instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_pushed)
             repeat(2) {
                 navigation.pushViewController(repeated, false)
                 fragmentManager.executePendingTransactions()
             }
+            backStackBeforePop = fragmentManager.backStackEntryCount
             navigation.popViewController(false)
             fragmentManager.executePendingTransactions()
             assertEquals(2, navigation.viewControllers.size)
         }
+        assertEquals(backStackBeforePop - 1, fragmentManager.backStackEntryCount)
     }
 }

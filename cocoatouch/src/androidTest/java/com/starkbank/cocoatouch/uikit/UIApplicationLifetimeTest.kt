@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
+import com.starkbank.cocoatouch.PlainActivity
 import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.foundation.NSMutableArray
@@ -21,7 +22,6 @@ import com.starkbank.cocoatouch.storyboard
 import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -154,9 +154,31 @@ class UIApplicationLifetimeTest {
     fun destroyingTheActivityBelowKeepsTheTopAttached() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
+        var picker: UIImagePickerController? = null
+        instrumentation.runOnMainSync { picker = UIImagePickerController.shared }
         finishAndAwaitDestroyed(first)
-        instrumentation.runOnMainSync { assertSame(top, UIApplication.activity()); assertNotNull(UIImagePickerController.shared) }
+        instrumentation.runOnMainSync {
+            assertSame(top, UIApplication.activity())
+            assertSame(picker, UIImagePickerController.shared)
+        }
         finishAndAwaitDestroyed(top)
+    }
+
+    @Test
+    fun plainActivityAttachKeepsThePreviousStoryboard() {
+        val first = scenarioActivity()
+        instrumentation.runOnMainSync { first.startActivity(Intent(first, PlainActivity::class.java)) }
+        var plain: PlainActivity? = null
+        awaitCondition("the PlainActivity to resume") {
+            plain = resumedActivities().filterIsInstance<PlainActivity>().firstOrNull()
+            plain != null
+        }
+        instrumentation.runOnMainSync {
+            assertSame(plain, UIApplication.activity)
+            assertSame(storyboard(first), UIApplication.storyboard)
+        }
+        finishAndAwaitDestroyed(plain!!)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
     }
 
     @Test
@@ -175,14 +197,18 @@ class UIApplicationLifetimeTest {
 
     @Test
     fun prepareLaunchRunsBeforeSuperOnCreate() {
+        val first = scenarioActivity()
         val events = TestStoryboard.launchEvents
         val callbacks = object : Application.ActivityLifecycleCallbacks by NoOpLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) { events.add("created") }
         }
         application.registerActivityLifecycleCallbacks(callbacks)
-        events.clear()
-        ActivityScenario.launch(TestStoryboard::class.java).close()
-        application.unregisterActivityLifecycleCallbacks(callbacks)
+        try {
+            events.clear()
+            finishAndAwaitDestroyed(launchSecondInstance(first))
+        } finally {
+            application.unregisterActivityLifecycleCallbacks(callbacks)
+        }
         assertEquals(listOf("prepareLaunch", "created"), events.take(2))
     }
 
@@ -212,6 +238,10 @@ class UIApplicationLifetimeTest {
         awaitCondition("the activity to be destroyed") {
             ActivityLifecycleMonitorRegistry.getInstance().getLifecycleStageOf(activity) == Stage.DESTROYED
         }
+    }
+
+    private fun resumedActivities(): List<Activity> {
+        return ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).toList()
     }
 
     private fun resumedStoryboards(): List<TestStoryboard> {

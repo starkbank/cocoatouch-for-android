@@ -38,6 +38,14 @@ class UITabBarControllerPopInTabTest {
     }
 
     @Test
+    fun dismissOfATabBarControllerOwningItselfSkipsPopInTab() {
+        val tabBarController = PoppingTabBarController()
+        tabBarController.tabBarController = tabBarController
+        tabBarController.dismissViewControllerAnimated(false)
+        assertEquals(0, tabBarController.poppedControllers.size)
+    }
+
+    @Test
     fun plainTabBarControllerDoesNotConsumeThePop() {
         assertFalse(UITabBarController().popInTab(false, null))
     }

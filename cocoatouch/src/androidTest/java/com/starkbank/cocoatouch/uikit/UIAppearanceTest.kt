@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.util.TypedValue
 import android.widget.Button
@@ -85,6 +86,8 @@ class UIAppearanceTest {
             uiSwitch.onTintColor = UIColor("#000000")
             val track = (uiSwitch.widget as SwitchCompat).trackTintList!!
             assertEquals(Color.parseColor("#123456"), track.getColorForState(intArrayOf(), 0))
+            val onActionColor = UIApplication.appearance.onActionColor(UITraitCollection.current).colorInt
+            assertEquals(onActionColor, (uiSwitch.widget as SwitchCompat).thumbTintList!!.defaultColor)
         }
     }
 
@@ -114,6 +117,19 @@ class UIAppearanceTest {
                 UITraitCollection.from(it.resources.configuration.uiMode).userInterfaceStyle,
                 UITraitCollection.current.userInterfaceStyle
             )
+        }
+    }
+
+    // AppCompat resets the resources to the system uiMode inside super.onConfigurationChanged, so a night
+    // configuration cannot be injected; seed the opposite style and expect it to be refreshed from the resources
+    @Test
+    fun configurationChangeUpdatesTheTraitCollection() {
+        scenario.onActivity { activity ->
+            val expected = UITraitCollection.from(activity.resources.configuration.uiMode).userInterfaceStyle
+            val stale = if (expected == UIUserInterfaceStyle.dark) UIUserInterfaceStyle.light else UIUserInterfaceStyle.dark
+            UITraitCollection.current = UITraitCollection(stale)
+            activity.onConfigurationChanged(Configuration(activity.resources.configuration))
+            assertEquals(expected, UITraitCollection.current.userInterfaceStyle)
         }
     }
 
