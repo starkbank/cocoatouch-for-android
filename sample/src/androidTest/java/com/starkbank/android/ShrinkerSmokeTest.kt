@@ -35,6 +35,18 @@ class ShrinkerSmokeTest {
     }
 
     @Test
+    fun inheritedOutletIsBoundInMinifiedBuild() {
+        onView(withId(R.id.mainTextfield)).perform(click())
+        onView(withId(R.id.textField1)).check(matches(withHint("Random TextField1")))
+    }
+
+    @Test
+    fun appSubclassOutletIsInstantiatedInMinifiedBuild() {
+        onView(withId(R.id.mainTextfield)).perform(click())
+        onView(withId(R.id.textField2)).check(matches(withHint("Random TextField2")))
+    }
+
+    @Test
     fun cellOutletIsBoundInMinifiedBuild() {
         onView(withId(R.id.mainTableview)).perform(click())
         onView(withText("Jon Snow")).check(matches(isDisplayed()))

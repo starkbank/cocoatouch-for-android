@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.compatibility
 import com.starkbank.cocoatouch.annotation.IBAction
+import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.uikit.UIResponder
 import java.lang.reflect.Method
 
@@ -10,21 +11,11 @@ object BackPressedParser {
         if (controller == null)
             return null
 
-        val methods = controller.javaClass.declaredMethods + controller.javaClass.superclass.declaredMethods
-
-        for (method in methods) {
-            if (isTheRightMethod(method)) {
-                return method
-            }
-        }
-        return null
+        return IBActionParser.actionMethods(controller.javaClass).firstOrNull { isTheRightMethod(it) }
     }
 
     private fun isTheRightMethod(method: Method): Boolean {
-        if (method.isAnnotationPresent(IBAction::class.java)) {
-            val action = method.getAnnotation(IBAction::class.java)!!
-            return action.value == DefaultActions.onBackPressed
-        }
-        return false
+        val action = method.getAnnotation(IBAction::class.java)!!
+        return action.value == DefaultActions.onBackPressed
     }
 }

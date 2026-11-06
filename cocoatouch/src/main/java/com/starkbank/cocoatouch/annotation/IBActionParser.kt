@@ -1,8 +1,6 @@
 package com.starkbank.cocoatouch.annotation
 import android.view.View
-import android.widget.Button
 import com.starkbank.cocoatouch.compatibility.DefaultActions
-import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import java.lang.reflect.Method
@@ -11,58 +9,51 @@ import java.lang.reflect.Method
 object IBActionParser {
 
     fun parse(controller: UIResponder) {
-        val methods: Array<Method> = controller.javaClass.declaredMethods
-        for (method in methods) {
+        for (method in actionMethods(controller.javaClass)) {
             parse(method, controller)
         }
     }
 
-    private fun parse(method: Method, controller: UIResponder) {
-        if (method.isAnnotationPresent(IBAction::class.java)) {
-            val action = method.getAnnotation(IBAction::class.java)!!
-
-            if (action.value == DefaultActions.onBackPressed)
-                return
-
-            val button: Any = controller.viewWithTag(action.value)
-            if (Button::class.java.isAssignableFrom(button.javaClass)) {
-                return parse(
-                    button as Button,
-                    method,
-                    controller
-                )
+    // Walks up to UIResponder so a base controller's actions are bound; a subclass method hides the parent's
+    // one with the same name and parameters
+    internal fun actionMethods(type: Class<*>): List<Method> {
+        val methodsBySignature = LinkedHashMap<Pair<String, List<Class<*>>>, Method>()
+        var current: Class<*>? = type
+        while (current != null && current != UIResponder::class.java) {
+            for (method in current.declaredMethods) {
+                if (!method.isAnnotationPresent(IBAction::class.java)) continue
+                methodsBySignature.putIfAbsent(Pair(method.name, method.parameterTypes.toList()), method)
             }
-            if (View::class.java.isAssignableFrom(button.javaClass)){
-                return parse(
-                    button as View,
-                    method,
-                    controller
-                )
-            }
+            current = current.superclass
         }
+        return methodsBySignature.values.toList()
     }
 
-    private fun parse(view: View, method: Method, controller: UIResponder) {
+    private fun parse(method: Method, controller: UIResponder) {
+        val action = method.getAnnotation(IBAction::class.java)!!
+
+        if (action.value == DefaultActions.onBackPressed)
+            return
+
+        val view: View = controller.viewWithTag(action.value)
         view.setOnClickListener {
             try {
-                val uiview = UIView()
-                method.invoke(controller, uiview)
+                method.invoke(controller, sender(view, method))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
+    private fun sender(view: View, method: Method): UIResponder {
+        val sender = senderOf(method.parameterTypes[0])
+        sender.widget = view
+        return sender
+    }
 
-    private fun parse(button: Button, method: Method, controller: UIResponder) {
-        button.setOnClickListener {
-            try {
-                val uibutton = UIButton()
-                uibutton.widget = button
-                method.invoke(controller, uibutton)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    private fun senderOf(type: Class<*>): UIResponder {
+        if (UIResponder::class.java.isAssignableFrom(type))
+            return type.newInstance() as UIResponder
+        return UIView()
     }
 }

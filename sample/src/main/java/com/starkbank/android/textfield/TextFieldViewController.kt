@@ -4,14 +4,11 @@ import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBOutlet
 import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
-import com.starkbank.cocoatouch.uikit.UITextField
-import com.starkbank.cocoatouch.uikit.UIViewController
 
 
-class TextFieldViewController: UIViewController() {
+class TextFieldViewController: BaseTextFieldViewController() {
 
-    @IBOutlet(R.id.textField1)  lateinit var textField1: UITextField
-    @IBOutlet(R.id.textField2)  lateinit var textField2: UITextField
+    @IBOutlet(R.id.textField2)  lateinit var textField2: HintTextField
 
 
     override fun viewDidLoad() {
