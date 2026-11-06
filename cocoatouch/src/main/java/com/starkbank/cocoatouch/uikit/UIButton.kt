@@ -7,7 +7,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 
 open class UIButton: UIControl() {
 
-    private var _tintColor: UIColor = UIColor("#ffffff")
+    private var _tintColor: UIColor = UIApplication.appearance.onActionColor(UITraitCollection.current)
 
     private fun getButton(): Button{
         return (widget as Button)

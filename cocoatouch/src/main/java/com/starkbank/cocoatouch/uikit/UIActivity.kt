@@ -1,4 +1,5 @@
 package com.starkbank.cocoatouch.uikit
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -53,12 +54,18 @@ open class UIActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareLaunch()
         super.onCreate(savedInstanceState)
+        UITraitCollection.current = UITraitCollection.from(resources.configuration.uiMode)
         setContentView(storyboardId())
         UIApplication.attach(this)
         initApplication()
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { dispatchBackPressed() }
         })
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        UITraitCollection.current = UITraitCollection.from(resources.configuration.uiMode)
     }
 
     private fun dispatchBackPressed() {

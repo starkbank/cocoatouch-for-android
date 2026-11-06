@@ -250,7 +250,6 @@ class UITableView : UIScrollView() {
     }
 
     private fun createTitleCell(text: String, holder: UIViewHolder) {
-        val context = UIApplication.sharedApplication().context()
         val textView = TextView(holder.container.context)
         val params = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -260,6 +259,10 @@ class UITableView : UIScrollView() {
         params.marginEnd = 16.dpToPx
         textView.text = text
         textView.layoutParams = params
+        UIApplication.appearance.sectionHeaderFont(UITraitCollection.current)?.let {
+            textView.textSize = it.size
+            textView.typeface = ResourcesCompat.getFont(UIApplication.applicationContext!!, it.name)
+        }
         holder.container.addView(textView)
         backgroundColor?.let { holder.container.setBackgroundColor(it.colorInt) }
     }

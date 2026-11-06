@@ -6,6 +6,7 @@ object UIApplication: UIResponder() {
 
     var delegate: UIApplicationDelegate? = null
     var isNotificationsEnabled: Boolean = true
+    var appearance: UIAppearance = UIDefaultAppearance
     internal var storyboard: UIStoryboard? = null
     internal var activity: UIActivity? = null
     internal var applicationContext: Context? = null

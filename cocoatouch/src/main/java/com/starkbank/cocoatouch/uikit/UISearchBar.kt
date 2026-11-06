@@ -36,7 +36,7 @@ class UISearchBar : UIView() {
             }
         }
 
-    var barTintColor: UIColor? = UIColor("#EFEFF0")
+    var barTintColor: UIColor? = UIApplication.appearance.secondaryBackgroundColor(UITraitCollection.current)
         set(value) {
             field = value
             backgroundColor = value

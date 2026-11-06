@@ -2,7 +2,6 @@ package com.starkbank.cocoatouch.uikit
 
 import android.R
 import android.content.res.ColorStateList
-import android.graphics.Color
 import androidx.appcompat.widget.SwitchCompat
 
 
@@ -16,16 +15,18 @@ class UISwitch : UIControl() {
 
     var onTintColor: UIColor? = null
         set(value) {
+            val appearance = UIApplication.appearance
+            val trait = UITraitCollection.current
             val thumbColors = ColorStateList(
                 arrayOf(intArrayOf(R.attr.state_checked), intArrayOf()), value?.let {
                     intArrayOf(
                         it.colorInt,
-                        Color.LTGRAY
+                        appearance.borderColor(trait).colorInt
                     )
                 }
             )
             getSwitch().trackTintList = thumbColors
-            getSwitch().thumbTintList = ColorStateList.valueOf(Color.WHITE)
+            getSwitch().thumbTintList = ColorStateList.valueOf(appearance.onActionColor(trait).colorInt)
             field = value
         }
 
