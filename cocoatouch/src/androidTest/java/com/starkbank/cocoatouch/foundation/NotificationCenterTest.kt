@@ -1,11 +1,13 @@
 package com.starkbank.cocoatouch.foundation
 
+import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,6 +50,18 @@ class NotificationCenterTest {
         NotificationCenter.postNotification("a")
         waitForMain()
         assertEquals(0, xCalls)
+    }
+
+    @Test
+    fun postFromABackgroundThreadRunsTheSelectorOnMain() {
+        var onMain = false
+        val token = NotificationCenter.addObserver({ onMain = Looper.myLooper() == Looper.getMainLooper() }, "a")
+        val poster = Thread { NotificationCenter.postNotification("a") }
+        poster.start()
+        poster.join()
+        waitForMain()
+        assertTrue(onMain)
+        NotificationCenter.removeObserver(token)
     }
 
     private fun waitForMain() {
