@@ -64,6 +64,7 @@ Compared with 0.0.1, the only public predecessor:
 - `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked; 0.0.1 read only the leaf class and passed a fresh `UIButton`.
 - `NotificationCenter.addObserver` returns a `NotificationObserver` and `removeObserver(observer)` removes exactly that one; the no-argument `removeObserver()` is deprecated and removes every registered observer, where 0.0.1 kept a single slot, so it unregistered only the last observer and leaked the others.
 - A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
+- `UIApplication` re-attaches on `onResume` too, so an activity that was only paused under a translucent one is attached again when it comes back.
 - `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
 
 ### Known issues
@@ -78,7 +79,6 @@ Each one is pinned by a test that fails when the behaviour changes.
 - CT-17: `UIProgressView` and `UIScrollView` declare no members (`ct17ProgressViewAndScrollViewDeclareNoMembers`).
 - The default `UIViewController` title is `javaClass.simpleName`, which the consumer's R8 obfuscates when the app does not set `title`.
 - `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `presentModalViewController`.
-- `UIApplication` re-attaches only on `onStart`: if the attached `UIActivity` is destroyed while another one is already STARTED (translucent on top, multi-window), the survivor has no `UIApplication.activity` until it restarts, and each re-attach registers extra launchers on it.
 - `popToRootViewController` also empties the pushes made inside a tab of a root `UITabBarController`, because `popBackStack(null, INCLUSIVE)` clears the whole back stack of the Activity.
 - After a push queued while the app is in the background, the fragments already on screen receive `viewDidAppear` without `viewWillAppear` on return: the queue drains in `onStart` after `super.onStart` and no longer turns `isNotificationsEnabled` on when queueing.
 

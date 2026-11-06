@@ -30,8 +30,12 @@ object UIApplication: UIResponder() {
         this.activity = activity
         (activity as? UIStoryboard)?.let { this.storyboard = it }
         this.applicationContext = activity.applicationContext
-        UIImagePickerController.shared = UIImagePickerController()
-        UIDocumentPickerViewController.shared = UIDocumentPickerViewController()
+        val pickers = activity.pickers ?: ActivityPickers(
+            image = UIImagePickerController(),
+            document = UIDocumentPickerViewController()
+        ).also { activity.pickers = it }
+        UIImagePickerController.shared = pickers.image
+        UIDocumentPickerViewController.shared = pickers.document
     }
 
     internal fun detach(activity: UIActivity) {

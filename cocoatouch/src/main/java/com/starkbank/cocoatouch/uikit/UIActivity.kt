@@ -13,6 +13,7 @@ open class UIActivity: AppCompatActivity() {
     protected val navigationController = UINavigationController()
     private var isInBackground = false
     private var lastCall: (() -> Unit)? = null
+    internal var pickers: ActivityPickers? = null
 
     open fun initialViewControllerId(): Int {
         return 0
@@ -103,6 +104,7 @@ open class UIActivity: AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (UIApplication.activity !== this) UIApplication.attach(this)
         val application = UIApplication.sharedApplication()
         application.delegate?.applicationWillEnterForeground(application)
         isInBackground = false

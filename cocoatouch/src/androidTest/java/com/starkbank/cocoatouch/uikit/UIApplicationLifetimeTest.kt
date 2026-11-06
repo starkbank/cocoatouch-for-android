@@ -13,6 +13,7 @@ import androidx.test.runner.lifecycle.Stage
 import com.starkbank.cocoatouch.PlainActivity
 import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.TranslucentActivity
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.foundation.NotificationCenter
 import com.starkbank.cocoatouch.foundation.NotificationObserver
@@ -181,6 +182,25 @@ class UIApplicationLifetimeTest {
         }
         finishAndAwaitDestroyed(plain!!)
         awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+    }
+
+    @Test
+    fun translucentActivityOnTopKeepsTheOneBelowAttachedAfterItFinishes() {
+        val first = scenarioActivity()
+        instrumentation.runOnMainSync { first.startActivity(Intent(first, TranslucentActivity::class.java)) }
+        var translucent: TranslucentActivity? = null
+        awaitCondition("the TranslucentActivity to be attached") {
+            translucent = resumedActivities().filterIsInstance<TranslucentActivity>().firstOrNull()
+            translucent != null && UIApplication.activity === translucent
+        }
+        onMain { assertEquals(Lifecycle.State.STARTED, first.lifecycle.currentState) }
+        finishAndAwaitDestroyed(translucent!!)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(first, UIApplication.activity)
+            navigation(first).pushViewController(pushedController(first), false)
+        }
+        awaitCondition("the push to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
     }
 
     @Test
