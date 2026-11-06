@@ -11,6 +11,7 @@ object IBOutletParser {
 
     private val fieldsByType = ConcurrentHashMap<Class<*>, List<Field>>()
 
+    @InternalCocoaTouchApi
     fun parse(controller: UIResponder) {
         for (field in outletFields(controller.javaClass)) {
             parse(field, controller)

@@ -6,6 +6,7 @@ import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 object UIApplication: UIResponder() {
 
     var delegate: UIApplicationDelegate? = null
+    @InternalCocoaTouchApi
     var isNotificationsEnabled: Boolean = true
     var appearance: UIAppearance = UIDefaultAppearance
     @InternalCocoaTouchApi

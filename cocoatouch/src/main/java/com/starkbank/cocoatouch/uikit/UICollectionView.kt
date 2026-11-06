@@ -11,6 +11,7 @@ import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
 import com.starkbank.cocoatouch.foundation.NSIndexPath
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 class UICollectionView : UIScrollView() {
 
@@ -144,6 +145,7 @@ class UICollectionView : UIScrollView() {
 
 }
 
+@InternalCocoaTouchApi
 class UIViewHolder(itemView: View) :
     ViewHolder(itemView) {
     companion object {

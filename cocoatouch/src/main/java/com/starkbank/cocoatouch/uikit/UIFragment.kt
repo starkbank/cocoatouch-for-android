@@ -9,6 +9,7 @@ import com.starkbank.cocoatouch.annotation.IBOutletParser
 import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
+@InternalCocoaTouchApi
 class UIFragment : Fragment() {
 
     var identifier = 0

@@ -3,8 +3,10 @@ import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.uikit.UIResponder
 import java.lang.reflect.Method
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
+@InternalCocoaTouchApi
 object BackPressedParser {
 
     fun getMethod(controller: UIResponder?): Method? {

@@ -14,6 +14,7 @@ object IBActionParser {
 
     private val methodsByType = ConcurrentHashMap<Class<*>, List<Method>>()
 
+    @InternalCocoaTouchApi
     fun parse(controller: UIResponder) {
         for (method in actionMethods(controller.javaClass)) {
             parse(method, controller)

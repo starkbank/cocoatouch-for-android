@@ -3,13 +3,15 @@ package com.starkbank.cocoatouch.uikit
 
 interface UIAppearance {
 
-    fun onActionColor(traitCollection: UITraitCollection): UIColor
+    fun onActionColor(traitCollection: UITraitCollection): UIColor = UIDefaultAppearance.onActionColor(traitCollection)
 
-    fun borderColor(traitCollection: UITraitCollection): UIColor
+    fun borderColor(traitCollection: UITraitCollection): UIColor = UIDefaultAppearance.borderColor(traitCollection)
 
-    fun secondaryBackgroundColor(traitCollection: UITraitCollection): UIColor
+    fun secondaryBackgroundColor(traitCollection: UITraitCollection): UIColor =
+        UIDefaultAppearance.secondaryBackgroundColor(traitCollection)
 
-    fun sectionHeaderFont(traitCollection: UITraitCollection): UIFont?
+    fun sectionHeaderFont(traitCollection: UITraitCollection): UIFont? =
+        UIDefaultAppearance.sectionHeaderFont(traitCollection)
 }
 
 
