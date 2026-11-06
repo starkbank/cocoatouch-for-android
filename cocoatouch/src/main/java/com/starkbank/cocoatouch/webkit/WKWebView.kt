@@ -46,20 +46,26 @@ open class WKWebView: UIView() {
 
 }
 
-// A program, not a block: the source keeps its top-level scope and a trailing line comment stays harmless. The guard
-// throws instead of returning because a top-level return is a SyntaxError
+// A block, not a program: a top-level function declaration is installed before any guard runs, so a program would hand
+// its functions to another origin. The block ends on its own line so a trailing line comment stays harmless, and a
+// leading "use strict" directive is repeated in front of the guard to keep the consumer's strict mode
 internal fun guardedSource(origin: String, source: String): String {
-    return "if ((location.protocol + '//' + location.host) !== ${JSONObject.quote(origin)} || " +
-        "window.__cocoatouchUserScript) throw 0;\n" +
+    val strict = if (strictDirective.containsMatchIn(source)) "\"use strict\";\n" else ""
+    return strict + "if ((location.protocol + '//' + location.host) === ${JSONObject.quote(origin)} && " +
+        "!window.__cocoatouchUserScript) {\n" +
         "window.__cocoatouchUserScript = true;\n" +
-        "$source\n"
+        "$source\n" +
+        "}"
 }
+
+private val strictDirective = Regex("^\\s*(\"use strict\"|'use strict')")
 
 private val urlPattern = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):(?://([^/?#]*))?")
 
 private val defaultPorts = mapOf("https" to 443, "http" to 80)
 
-// Mirrors JS location.protocol + '//' + location.host: lowercase scheme, punycode host, port unless it is the scheme's default
+// Mirrors JS location.protocol + '//' + location.host: lowercase scheme, punycode host, port unless it is the
+// scheme's default
 internal fun originOf(url: String): String {
     val match = urlPattern.find(url) ?: return ""
     val scheme = match.groupValues[1].lowercase(Locale.ROOT)
@@ -74,7 +80,8 @@ internal fun originOf(url: String): String {
     return "$scheme://${asciiHost(host)}$port"
 }
 
-// Non-ASCII hosts follow java.net.IDN (IDNA2003) and may differ from Chromium for a few labels, so such pages fail closed
+// Non-ASCII hosts follow java.net.IDN (IDNA2003) and may differ from Chromium for a few labels, so such pages fail
+// closed
 // toASCII rejects a label longer than 63 characters; such a host cannot be a real origin, so it is kept as written
 private fun asciiHost(host: String): String {
     return try {

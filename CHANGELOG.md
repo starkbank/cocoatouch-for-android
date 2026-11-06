@@ -71,7 +71,7 @@ Compared with 0.0.1, the only public predecessor:
 - Pops, dismisses, tab selection and in-tab presents requested while the activity's state is saved, including right after `super.onStop()`, are queued in order with the pushes and applied when it restarts; `removeFromSuperview` is queued the same way only when the controller has a navigation controller. They run on the activity that owns the navigation controller.
 - `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
 - `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
-- `WKWebView` runs its user script once per finished page and only on the origin (scheme and host) passed to `load`; 0.0.1 ran it on every subresource of any page. Navigation is not restricted, the script just never runs on another origin.
+- `WKWebView` runs its user script once per finished page and only on the origin (scheme and host) passed to `load`; 0.0.1 ran it on every subresource of any page. Navigation is not restricted, the script just never runs on another origin. It runs inside a guard block, so its top-level `let`/`const`/`class`/`function` are local to it (assign to `window` to expose values), and a leading `"use strict"` directive is honoured.
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.
 - CT-06: popping back to the root calls `viewDidLoad` on it again (`ct06PopCallsViewDidLoadAgainOnRoot`).

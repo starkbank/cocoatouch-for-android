@@ -403,7 +403,7 @@ You can set any ViewController you want.
 | `UIDefaultAppearance` | none | Android-specific | Default `UIAppearance` |
 | `UITraitCollection` | `UITraitCollection` | yes | `userInterfaceStyle` only |
 | `UIUserInterfaceStyle` | `UIUserInterfaceStyle` | yes | - |
-| `WKWebView` | `WKWebView` | yes | User scripts run only on the origin passed to `load`; navigation is not restricted, and after a redirect to another origin the script does not run; `configuration` owns the `WebViewClient`, so set `configuration` last and do not replace the client afterwards |
+| `WKWebView` | `WKWebView` | yes | User scripts run only on the origin passed to `load`; navigation is not restricted, and after a redirect to another origin the script does not run; the user script runs inside a guard block: top-level `let`/`const`/`class`/`function` are local to it, so assign to `window` to expose values, and a leading `"use strict"` directive is honoured; `configuration` owns the `WebViewClient`, so set `configuration` last and do not replace the client afterwards |
 | `WKWebViewConfiguration` | `WKWebViewConfiguration` | yes | - |
 | `WKUserContentController` | `WKUserContentController` | yes | - |
 | `WKUserScript` | `WKUserScript` | yes | - |

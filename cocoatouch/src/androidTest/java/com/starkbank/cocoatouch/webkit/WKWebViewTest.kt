@@ -38,16 +38,6 @@ class WKWebViewTest {
         }
     }
 
-    private fun configure(source: String = countingSource) {
-        onMain {
-            webView.configuration = WKWebViewConfiguration().also {
-                it.userContentController = WKUserContentController().also { controller ->
-                    controller.addUserScript(WKUserScript(source, WKUserScript.WKUserScriptInjectionTime.atDocumentEnd))
-                }
-            }
-        }
-    }
-
     @After
     fun close() {
         onMain { widget.destroy() }
@@ -102,10 +92,10 @@ class WKWebViewTest {
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         onMain { widget.loadUrl("data:text/html,<html><body>x</body></html>") }
-        val onBlankPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
-        awaitResult(onBlankPage, "\"undefined\"")
+        val onDataPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
+        awaitResult(onDataPage, "\"undefined\"")
         Thread.sleep(1000)
-        assertEquals("\"undefined\"", evaluate(onBlankPage))
+        assertEquals("\"undefined\"", evaluate(onDataPage))
     }
 
     @Test
@@ -116,11 +106,30 @@ class WKWebViewTest {
     }
 
     @Test
-    fun aUserScriptTopLevelConstIsVisibleToThePage() {
-        configure("const cocoatouchApi = 7; window.injected = 1")
+    fun aUserScriptTopLevelDeclarationStaysInsideTheGuardBlock() {
+        configure("const cocoatouchApi = 7; window.cocoatouchExposed = 7; window.injected = 1")
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
-        assertEquals("\"number\"", evaluate("typeof cocoatouchApi"))
+        assertEquals("\"undefined\"", evaluate("typeof cocoatouchApi"))
+        assertEquals("\"7\"", evaluate("String(window.cocoatouchExposed)"))
+    }
+
+    @Test
+    fun aUseStrictDirectiveIsPreserved() {
+        configure("\"use strict\"; window.strictThis = (function () { return this === undefined })()")
+        onMain { webView.load(URLRequest(pageA)) }
+        assertEquals("\"true\"", awaitResult("String(window.strictThis)", "\"true\""))
+    }
+
+    @Test
+    fun theGuardKeepsFunctionsFromAnotherOrigin() {
+        onMain {
+            widget.settings.javaScriptEnabled = true
+            webView.load(URLRequest(pageA))
+        }
+        awaitResult("document.readyState", "\"complete\"")
+        evaluate(guardedSource("https://other.test", "function leaked() { return 1 }"))
+        assertEquals("\"undefined\"", evaluate("typeof leaked"))
     }
 
     @Test
@@ -136,6 +145,16 @@ class WKWebViewTest {
         assertEquals("\"1\"", evaluate(countScript))
         evaluate(guardedSource("file://", countingSource))
         assertEquals("\"1\"", evaluate(countScript))
+    }
+
+    private fun configure(source: String = countingSource) {
+        onMain {
+            webView.configuration = WKWebViewConfiguration().also {
+                it.userContentController = WKUserContentController().also { controller ->
+                    controller.addUserScript(WKUserScript(source, WKUserScript.WKUserScriptInjectionTime.atDocumentEnd))
+                }
+            }
+        }
     }
 
     private fun evaluate(script: String): String {
