@@ -3,6 +3,7 @@ package com.starkbank.cocoatouch.uikit
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -29,6 +30,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -206,6 +208,34 @@ class UIApplicationLifetimeTest {
     }
 
     @Test
+    fun becomingTheTopResumedActivityAttachesIt() {
+        // The callback exists from API 29; below it nothing calls the override and its super does not exist
+        assumeTrue(Build.VERSION.SDK_INT >= 29)
+        val first = scenarioActivity()
+        var firstPicker: UIImagePickerController? = null
+        onMain { firstPicker = UIImagePickerController.shared }
+        launchSecondInstance(first)
+        onMain {
+            assertNotSame(first, UIApplication.activity)
+            first.onTopResumedActivityChanged(true)
+            assertSame(first, UIApplication.activity)
+            assertSame(firstPicker, UIImagePickerController.shared)
+        }
+    }
+
+    @Test
+    fun destroyedStoryboardUnderAPlainActivityIsReleased() {
+        val first = scenarioActivity()
+        val reference = onWorkerThread { destroyStoryboardUnderPlainActivity(first) }
+        onMain { assertNull(UIApplication.storyboard) }
+        assertCollected(reference)
+        lateinit var plain: PlainActivity
+        onMain { plain = resumedActivities().filterIsInstance<PlainActivity>().first() }
+        finishAndAwaitDestroyed(plain)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+    }
+
+    @Test
     fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
@@ -303,6 +333,27 @@ class UIApplicationLifetimeTest {
         finishAndAwaitDestroyed(first)
         finishAndAwaitDestroyed(top)
         return WeakReference(top)
+    }
+
+    private fun destroyStoryboardUnderPlainActivity(first: TestStoryboard): WeakReference<TestStoryboard> {
+        val below = launchSecondInstance(first)
+        onMain { below.startActivity(Intent(below, PlainActivity::class.java)) }
+        awaitCondition("the PlainActivity to resume") {
+            resumedActivities().filterIsInstance<PlainActivity>().isNotEmpty()
+        }
+        finishAndAwaitDestroyed(below)
+        return WeakReference(below)
+    }
+
+    private fun assertCollected(reference: WeakReference<*>) {
+        var attempts = 0
+        while (reference.get() != null && attempts < 50) {
+            Runtime.getRuntime().gc()
+            System.runFinalization()
+            Thread.sleep(100)
+            attempts++
+        }
+        assertNull("still reachable after $attempts collections", reference.get())
     }
 
     // A worker's stack dies with it, so no stale slot of the test thread can keep an activity alive

@@ -65,7 +65,7 @@ open class UINavigationController: UIViewController() {
     open fun popViewController(animated: Boolean) {
         val tabs = lastViewController(this.pushViewControllers) as? UITabBarController
         if (tabs?.popInTab(animated, null) == true) return
-        val activity = ownerActivity() ?: return
+        if (ownerActivity() == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -76,7 +76,7 @@ open class UINavigationController: UIViewController() {
         }
         this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
-        transact { activity.supportFragmentManager.popBackStack() }
+        transactOnOwner { it.popBackStack() }
 
         val lastViewController = this.pushViewControllers.lastObject()
         if(lastViewController is UITabBarController) {
@@ -89,7 +89,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun popToRootViewController(animated: Boolean) {
-        val activity = ownerActivity() ?: return
+        if (ownerActivity() == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -99,12 +99,7 @@ open class UINavigationController: UIViewController() {
         for (i in lastIndex downTo 1) {
             this.pushViewControllers.removeObjectAtIndex(i)
         }
-        transact {
-            activity.supportFragmentManager.popBackStack(
-                null,
-                FragmentManager.POP_BACK_STACK_INCLUSIVE
-            )
-        }
+        transactOnOwner { it.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE) }
 
         this.pushViewControllers.lastObject()?.viewWillAppear(animated)
     }
@@ -127,13 +122,13 @@ open class UINavigationController: UIViewController() {
 
         this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
-        // A queued transaction replays after the restart, where an animation would run on a screen the user already left
+        // The drain replays without animation, as the old drain forced animated = false
         val animates = animated && this.pausedTransactions == null
-        transact { commitModal(activity, viewController, animates, addsToBackStack) }
+        transact { commitModal(viewController, animates, addsToBackStack) }
     }
 
     open fun dismissModalViewControllerAnimated(animated: Boolean) {
-        val activity = ownerActivity() ?: return
+        if (ownerActivity() == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -144,7 +139,7 @@ open class UINavigationController: UIViewController() {
         }
         this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
-        transact { activity.supportFragmentManager.popBackStack() }
+        transactOnOwner { it.popBackStack() }
 
         this.pushViewControllers.lastObject()?.viewWillAppear(animated)
     }
@@ -156,12 +151,8 @@ open class UINavigationController: UIViewController() {
         transact { commitPush(viewController, animates, addsToBackStack) }
     }
 
-    private fun commitModal(
-        activity: UIActivity,
-        viewController: UIViewController,
-        animated: Boolean,
-        addsToBackStack: Boolean
-    ) {
+    private fun commitModal(viewController: UIViewController, animated: Boolean, addsToBackStack: Boolean) {
+        val activity = ownerActivity() ?: return
         val storyboard = viewController.storyboard!!
         val fragment = viewController.view!!.fragment()!!
 
@@ -231,9 +222,16 @@ open class UINavigationController: UIViewController() {
     }
 
     // A destroyed owner counts as no activity, so a controller kept past its activity cannot act on another one
-    private fun ownerActivity(): UIActivity? {
+    internal fun ownerActivity(): UIActivity? {
         val owning = owner ?: return UIApplication.activity
         return owning.get()?.takeUnless { it.isDestroyed }
+    }
+
+    internal override fun transactOnOwner(block: (FragmentManager) -> Unit) {
+        transact {
+            val manager = ownerActivity()?.supportFragmentManager ?: return@transact
+            block(manager)
+        }
     }
 
     // When the state is saved a fragment transaction throws, so it waits, in order, for the restart

@@ -4,6 +4,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.TestTabBarController
 import com.starkbank.cocoatouch.navigation
 import com.starkbank.cocoatouch.onMain
 import com.starkbank.cocoatouch.storyboard
@@ -11,6 +12,7 @@ import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -127,6 +129,49 @@ class PausedTransitionsTest {
             assertSame(replacement, navigation(it).viewControllers.last())
             assertEquals(1, it.supportFragmentManager.backStackEntryCount)
         }
+    }
+
+    @Test
+    fun selectingATabWhileStateIsSavedIsAppliedOnRestart() {
+        val activity = launchedActivity()
+        val tabs = showTabs(activity)
+        val second = tabs.viewControllers[1]
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { tabs.selectedIndex = 1 }
+        assertSame(second, tabs.selectedViewController)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertTrue(second.view!!.fragment()!!.isAdded)
+        }
+    }
+
+    @Test
+    fun inTabPresentWhileStateIsSavedIsAppliedOnRestart() {
+        val activity = launchedActivity()
+        val tabs = showTabs(activity)
+        val presented = pushedController(activity)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { tabs.presentViewController(presented) }
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertTrue(presented.view!!.fragment()!!.isAdded)
+            assertEquals(2, it.supportFragmentManager.backStackEntryCount)
+        }
+    }
+
+    private fun showTabs(activity: TestStoryboard): TestTabBarController {
+        val tabs = storyboard(activity).instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_tabs)
+            as TestTabBarController
+        val tabControllers = arrayListOf(pushedController(activity), pushedController(activity))
+        onMain {
+            navigation(activity).pushViewController(tabs, false)
+            activity.supportFragmentManager.executePendingTransactions()
+            tabs.viewControllers = tabControllers
+            activity.supportFragmentManager.executePendingTransactions()
+        }
+        return tabs
     }
 
     private fun launchedActivity(): TestStoryboard {

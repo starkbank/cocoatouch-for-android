@@ -39,6 +39,7 @@ class TestStoryboard : UIStoryboard() {
     override fun viewControllerForIdentifier(identifier: Int): UIViewController {
         if (identifier == R.layout.cocoatouch_test_root) return RecordingViewController()
         if (identifier == R.layout.cocoatouch_test_pushed) return PushedViewController()
+        if (identifier == R.layout.cocoatouch_test_tabs) return TestTabBarController()
         return super.viewControllerForIdentifier(identifier)
     }
 }

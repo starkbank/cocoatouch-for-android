@@ -41,7 +41,7 @@ open class UIActivity: AppCompatActivity() {
     }
 
     fun setRootViewController(viewController: UIViewController) {
-        if (UIApplication.activity == null) return
+        if (isDestroyed) return
         if(!isInBackground) {
             for (fragment in this.supportFragmentManager.fragments) {
                 this.supportFragmentManager.beginTransaction().remove(fragment).commitAllowingStateLoss()
@@ -117,6 +117,12 @@ open class UIActivity: AppCompatActivity() {
             it.invoke()
             lastCall = null
         }
+    }
+
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        if (!isTopResumedActivity) return
+        if (UIApplication.activity !== this) UIApplication.attach(this)
     }
 
     override fun onPause() {

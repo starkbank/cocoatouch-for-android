@@ -48,9 +48,7 @@ open class UITabBarController : UIViewController(), UITabBarDelegate {
         controller.tabBarController = this
         controller.view?.fragment()?.let { fragment ->
             controller.setParentViewController(this)
-            val fragmentTransaction = UIApplication.activity?.supportFragmentManager?.beginTransaction()
-            fragmentTransaction?.replace(tabContainerId(), fragment)
-            fragmentTransaction?.commit()
+            transactOnOwner { it.beginTransaction().replace(tabContainerId(), fragment).commit() }
         }
     }
 
@@ -61,18 +59,20 @@ open class UITabBarController : UIViewController(), UITabBarDelegate {
         viewController.setParentViewController(this.selectedViewController)
         viewController.view?.fragment()?.let { fragment ->
             viewController.setParentViewController(this)
-            val fragmentTransaction = UIApplication.activity?.supportFragmentManager?.beginTransaction()
-            if (animated) {
-                fragmentTransaction?.setCustomAnimations(
-                    R.anim.cocoatouch_slide_in,
-                    R.anim.cocoatouch_fade_out,
-                    R.anim.cocoatouch_fade_in,
-                    R.anim.cocoatouch_slide_out
-                )
+            transactOnOwner {
+                val fragmentTransaction = it.beginTransaction()
+                if (animated) {
+                    fragmentTransaction.setCustomAnimations(
+                        R.anim.cocoatouch_slide_in,
+                        R.anim.cocoatouch_fade_out,
+                        R.anim.cocoatouch_fade_in,
+                        R.anim.cocoatouch_slide_out
+                    )
+                }
+                fragmentTransaction.add(tabContainerId(), fragment)
+                fragmentTransaction.addToBackStack(viewController.javaClass.name)
+                fragmentTransaction.commit()
             }
-            fragmentTransaction?.add(tabContainerId(), fragment)
-            fragmentTransaction?.addToBackStack(viewController.javaClass.name)
-            fragmentTransaction?.commit()
         }
     }
 

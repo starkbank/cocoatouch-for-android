@@ -67,8 +67,8 @@ Compared with 0.0.1, the only public predecessor:
 - `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked; 0.0.1 read only the leaf class and passed a fresh `UIButton`.
 - `NotificationCenter.addObserver` returns a `NotificationObserver` and `removeObserver(observer)` removes exactly that one; `removeObserver()` without a token no longer compiles (0.0.1 kept a single slot, so it unregistered only the last observer and leaked the others).
 - A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
-- `UIApplication` re-attaches on `onResume` too, so an activity that was only paused under a translucent one is attached again when it comes back.
-- Pops and dismisses requested while the activity's state is saved are queued in order with the pushes and applied when it restarts; every navigation transaction runs on the activity that owns the navigation controller.
+- `UIApplication` re-attaches on `onResume` and when an activity becomes the top resumed activity (API 29+ multi-window), so an activity that was only paused under a translucent one, or whose split-screen neighbour closed, is attached again.
+- Pops, dismisses, tab selection, in-tab presents and `removeFromSuperview` requested while the activity's state is saved are queued in order with the pushes and applied when it restarts; they run on the activity that owns the navigation controller.
 - `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
 - `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
 ### Known issues
@@ -82,7 +82,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 - CT-16: after the activity is recreated, the navigation controller holds only the initial controller (`ct16RecreateKeepsOnlyTheInitialController`).
 - CT-17: `UIProgressView` and `UIScrollView` declare no members (`ct17ProgressViewAndScrollViewDeclareNoMembers`).
 - The default `UIViewController` title is `javaClass.simpleName`, which the consumer's R8 obfuscates when the app does not set `title`.
-- `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `presentModalViewController`.
+- `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `commitModal`: at the call while the activity is resumed, and at the restart when the call was queued while its state was saved.
 - `popToRootViewController` also empties the pushes made inside a tab of a root `UITabBarController`, because `popBackStack(null, INCLUSIVE)` clears the whole back stack of the Activity.
 - After a push queued while the app is in the background, the fragments already on screen receive `viewDidAppear` without `viewWillAppear` on return: the queue drains in `onStart` after `super.onStart` and no longer turns `isNotificationsEnabled` on when queueing.
 
@@ -90,7 +90,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
 - The application context is set at process start by a content provider (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. The provider runs only in the app's main process: an app with `android:process` components calls `UIApplication.initialize(this)` in `Application.onCreate`, and an app that wants no provider removes `com.starkbank.cocoatouch.CocoaTouchInitializer` with `tools:node="remove"` and initialises by hand.
 - `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
-- `UIApplication` attaches in `onCreate`, re-attaches in `onStart` and releases on destroy.
+- `UIApplication` attaches in `onCreate`, re-attaches in `onStart`, in `onResume` and when the activity becomes the top resumed one (API 29+ multi-window), and releases on destroy; `UIApplication.storyboard` is cleared when the storyboard activity is destroyed even if another activity is attached.
 - `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are created once per activity and released when it is destroyed; a picker kept from a destroyed activity throws on `present()`.
 - `UIApplication.activity`/`storyboard`, `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are filled by the library and read-only for apps, which must delete their own assignments.
 - `UIActivity.prepareLaunch()` runs before `super.onCreate`.

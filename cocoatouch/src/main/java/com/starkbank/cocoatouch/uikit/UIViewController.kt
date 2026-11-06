@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 import android.view.View
+import androidx.fragment.app.FragmentManager
 import androidx.core.view.WindowInsetsControllerCompat
 import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.foundation.NSMutableArray
@@ -94,9 +95,17 @@ open class UIViewController: UIResponder() {
 
     fun removeFromSuperview() {
         this.view?.fragment()?.let { fragment ->
-            UIApplication.activity?.supportFragmentManager?.beginTransaction()?.remove(fragment)
-                ?.commit()
+            transactOnOwner { it.beginTransaction().remove(fragment).commit() }
         }
+    }
+
+    internal open fun transactOnOwner(block: (FragmentManager) -> Unit) {
+        val navigation = this.navigationController
+        if (navigation != null) {
+            navigation.transactOnOwner(block)
+            return
+        }
+        UIApplication.activity?.let { block(it.supportFragmentManager) }
     }
 
     //
