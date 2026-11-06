@@ -40,7 +40,9 @@ open class WKWebView: UIView() {
     }
 
     fun load(request: URLRequest) {
-        if (!request.url.startsWith("javascript:", ignoreCase = true)) loadedOrigin = originOf(request.url).ifEmpty { null }
+        if (!request.url.startsWith("javascript:", ignoreCase = true)) {
+            loadedOrigin = originOf(request.url).ifEmpty { null }
+        }
         getWebView().loadUrl(request.url)
     }
 
@@ -48,10 +50,12 @@ open class WKWebView: UIView() {
 
 // A block, not a program: a top-level function declaration is installed before any guard runs, so a program would hand
 // its functions to another origin. The block ends on its own line so a trailing line comment stays harmless, and a
-// leading "use strict" directive is repeated in front of the guard to keep the consumer's strict mode
+// leading "use strict" directive is repeated in front of the guard to keep the consumer's strict mode. location.host is
+// empty for every file page, so the file: branch compares the path in its place
 internal fun guardedSource(origin: String, source: String): String {
     val strict = if (strictDirective.containsMatchIn(source)) "\"use strict\";\n" else ""
-    return strict + "if ((location.protocol === 'file:' ? location.protocol + '//' + location.host + location.pathname : " +
+    return strict + "if ((location.protocol === 'file:' ? " +
+        "location.protocol + '//' + location.host + location.pathname : " +
         "location.protocol + '//' + location.host) === ${JSONObject.quote(origin)} && " +
         "!window.__cocoatouchUserScript) {\n" +
         "window.__cocoatouchUserScript = true;\n" +
@@ -71,9 +75,11 @@ private val defaultPorts = mapOf("https" to 443, "http" to 80)
 internal fun originOf(url: String): String {
     val match = urlPattern.find(url) ?: return ""
     val scheme = match.groupValues[1].lowercase(Locale.ROOT)
-    val authority = match.groupValues[2].substringAfterLast('@')
     if (match.groups[2] == null) return ""
-    if (scheme == "file") return "file://" + url.substring(match.range.last + 1).substringBefore('?').substringBefore('#')
+    if (scheme == "file") {
+        return "file://" + url.substring(match.range.last + 1).substringBefore('?').substringBefore('#')
+    }
+    val authority = match.groupValues[2].substringAfterLast('@')
     val portIndex = authority.lastIndexOf(':')
     val hasPort = portIndex >= 0 && !authority.endsWith("]")
     val host = if (hasPort) authority.substring(0, portIndex) else authority

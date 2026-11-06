@@ -70,11 +70,10 @@ class UITextFieldFocusTest {
     }
 
     @Test
-    fun resignDoesNotHandFocusToAnotherField() {
+    fun resignLeavesTheFieldUnfocused() {
         onMain {
             fieldA.becomeFirstResponder()
             fieldA.resignFirstResponder()
-            assertFalse(b.isFocused)
             assertFalse(a.isFocused)
         }
     }

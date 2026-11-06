@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit
 class WKWebViewTest {
 
     private val pageA = "file:///android_asset/cocoatouch_test_web_a.html"
+    private val pageB = "file:///android_asset/cocoatouch_test_web_b.html"
+    private val httpsPageA = "https://appassets.androidplatform.net/assets/cocoatouch_test_web_a.html"
     private val countScript = "String(window.injected)"
     private val countingSource = "window.injected = (window.injected || 0) + 1"
     private lateinit var scenario: ActivityScenario<TestStoryboard>
@@ -96,25 +98,23 @@ class WKWebViewTest {
     fun anHttpsPageIsInjectedOnce() {
         assumeTrue(Build.VERSION.SDK_INT >= 26)
         configure()
-        onMain {
-            val library = widget.webViewClient
-            val assetLoader = WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(widget.context))
-                .build()
-            widget.webViewClient = object : WebViewClient() {
-                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                    return request?.let { assetLoader.shouldInterceptRequest(it.url) }
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    library.onPageFinished(view, url)
-                }
-            }
-            webView.load(URLRequest("https://appassets.androidplatform.net/assets/cocoatouch_test_web_a.html"))
-        }
+        loadThroughAssetLoader(httpsPageA)
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         Thread.sleep(500)
         assertEquals("\"1\"", evaluate(countScript))
+    }
+
+    @Test
+    fun aNavigationWithinTheLoadedHttpsOriginInjectsTheNewPageOnce() {
+        assumeTrue(Build.VERSION.SDK_INT >= 26)
+        configure()
+        loadThroughAssetLoader(httpsPageA)
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
+        evaluate("document.getElementById('go').click()")
+        val onPageB = "location.pathname.endsWith('web_b.html') ? $countScript : 'waiting'"
+        assertEquals("\"1\"", awaitResult(onPageB, "\"1\""))
+        Thread.sleep(500)
+        assertEquals("\"1\"", evaluate(onPageB))
     }
 
     @Test
@@ -182,10 +182,34 @@ class WKWebViewTest {
         awaitResult("document.readyState", "\"complete\"")
         evaluate(guardedSource("https://other.test", countingSource))
         assertEquals("\"undefined\"", evaluate(countScript))
+        evaluate(guardedSource(pageB, countingSource))
+        assertEquals("\"undefined\"", evaluate(countScript))
         evaluate(guardedSource(pageA, countingSource))
         assertEquals("\"1\"", evaluate(countScript))
         evaluate(guardedSource(pageA, countingSource))
         assertEquals("\"1\"", evaluate(countScript))
+    }
+
+    private fun loadThroughAssetLoader(url: String) {
+        onMain {
+            val library = widget.webViewClient
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(widget.context))
+                .build()
+            widget.webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    return request?.let { assetLoader.shouldInterceptRequest(it.url) }
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    library.onPageFinished(view, url)
+                }
+            }
+            webView.load(URLRequest(url))
+        }
     }
 
     private fun configure(source: String = countingSource) {
