@@ -43,10 +43,10 @@ object IBActionParser {
     private fun parse(method: Method, controller: UIResponder) {
         val action = method.getAnnotation(IBAction::class.java)!!
 
+        checkSender(method, controller)
         if (action.value == DefaultActions.onBackPressed)
             return
 
-        checkSender(method, controller)
         val view = viewOf(action.value, method, controller)
         view.setOnClickListener {
             try {
@@ -63,7 +63,13 @@ object IBActionParser {
                 "@IBAction ${method.name} in ${controller.javaClass.simpleName} must declare exactly one sender parameter"
             )
         val type = method.parameterTypes[0]
-        if (!UIResponder::class.java.isAssignableFrom(type)) return
+        if (!UIResponder::class.java.isAssignableFrom(type)) {
+            if (type.isAssignableFrom(UIView::class.java)) return
+            throw IllegalStateException(
+                "@IBAction ${method.name} in ${controller.javaClass.simpleName}: " +
+                    "sender type ${type.simpleName} cannot receive a UIView"
+            )
+        }
         if (!Modifier.isAbstract(type.modifiers) && type.constructors.any { it.parameterTypes.isEmpty() }) return
         throw IllegalStateException(
             "@IBAction ${method.name} in ${controller.javaClass.simpleName}: " +

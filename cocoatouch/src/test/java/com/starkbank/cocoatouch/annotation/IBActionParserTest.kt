@@ -49,6 +49,21 @@ class AbstractSenderFixture : UIViewController() {
     @IBAction(1) fun act(sender: AbstractSender) {}
 }
 
+class StringSenderFixture : UIViewController() {
+
+    @IBAction(1) fun act(sender: String) {}
+}
+
+class AnySenderFixture : UIViewController() {
+
+    @IBAction(1) fun act(sender: Any) {}
+}
+
+class NoSenderBackFixture : UIViewController() {
+
+    @IBAction(DefaultActions.onBackPressed) fun back() {}
+}
+
 class MissingViewFixture : UIViewController() {
 
     @IBAction(999999) fun act(sender: UIView) {}
@@ -97,6 +112,26 @@ class IBActionParserTest {
     fun actionWithoutSenderParameterFailsAtBind() {
         val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(NoSenderFixture()) }
         assertTrue(error.message!!.contains("exactly one sender parameter"))
+    }
+
+    @Test
+    fun senderTypeAUIViewCannotSatisfyFailsAtBind() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(StringSenderFixture()) }
+        assertTrue(error.message!!.contains("cannot receive a UIView"))
+    }
+
+    @Test
+    fun backHandlerWithoutSenderFailsAtBind() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(NoSenderBackFixture()) }
+        assertTrue(error.message!!.contains("exactly one sender parameter"))
+    }
+
+    @Test
+    fun anySenderTypeBinds() {
+        val fixture = AnySenderFixture()
+        fixture.view = UIView().apply { widget = FrameLayout(nullOf<Context>()) }
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(fixture) }
+        assertTrue(error.message!!.contains("not found"))
     }
 
     @Test
