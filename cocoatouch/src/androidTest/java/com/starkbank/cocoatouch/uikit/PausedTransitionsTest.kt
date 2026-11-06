@@ -11,6 +11,7 @@ import com.starkbank.cocoatouch.storyboard
 import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -158,6 +159,40 @@ class PausedTransitionsTest {
             it.supportFragmentManager.executePendingTransactions()
             assertTrue(presented.view!!.fragment()!!.isAdded)
             assertEquals(2, it.supportFragmentManager.backStackEntryCount)
+        }
+    }
+
+    @Test
+    fun dismissWhileStateIsSavedIsAppliedOnRestart() {
+        val activity = launchedActivity()
+        val modal = pushedController(activity)
+        onMain {
+            navigation(activity).presentViewController(modal, false)
+            activity.supportFragmentManager.executePendingTransactions()
+        }
+        assertEquals(1, activity.supportFragmentManager.backStackEntryCount)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).dismissModalViewControllerAnimated(false) }
+        assertEquals(1, navigation(activity).viewControllers.size)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertEquals(0, it.supportFragmentManager.backStackEntryCount)
+            assertFalse(modal.view!!.fragment()!!.isAdded)
+        }
+    }
+
+    @Test
+    fun presentWhilePausedReplaysAsAModal() {
+        val activity = launchedActivity()
+        val modal = pushedController(activity)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).presentViewController(modal, false) }
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertTrue(modal.view!!.fragment()!!.isAdded)
+            assertEquals(1, it.supportFragmentManager.backStackEntryCount)
         }
     }
 

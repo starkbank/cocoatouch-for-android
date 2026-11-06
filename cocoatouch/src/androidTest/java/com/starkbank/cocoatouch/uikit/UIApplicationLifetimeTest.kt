@@ -295,15 +295,7 @@ class UIApplicationLifetimeTest {
 
     @Test
     fun destroyedActivityIsCollected() {
-        val reference = onWorkerThread { destroyBothInstances() }
-        var attempts = 0
-        while (reference.get() != null && attempts < 20) {
-            Runtime.getRuntime().gc()
-            System.runFinalization()
-            Thread.sleep(100)
-            attempts++
-        }
-        assertNull(reference.get())
+        assertCollected(onWorkerThread { destroyBothInstances() })
     }
 
     @Test
@@ -321,6 +313,27 @@ class UIApplicationLifetimeTest {
             val error = assertThrows(IllegalStateException::class.java) { topPicker!!.present() }
             assertEquals(
                 "UIImagePickerController.shared belongs to a destroyed activity; read UIImagePickerController.shared again",
+                error.message
+            )
+        }
+    }
+
+    @Test
+    fun finishingTheTopRestoresTheBelowActivityDocumentPicker() {
+        val first = scenarioActivity()
+        var firstPicker: UIDocumentPickerViewController? = null
+        onMain { firstPicker = UIDocumentPickerViewController.shared }
+        val top = launchSecondInstance(first)
+        var topPicker: UIDocumentPickerViewController? = null
+        onMain { topPicker = UIDocumentPickerViewController.shared }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(firstPicker, UIDocumentPickerViewController.shared)
+            val error = assertThrows(IllegalStateException::class.java) { topPicker!!.present() }
+            assertEquals(
+                "UIDocumentPickerViewController.shared belongs to a destroyed activity; " +
+                    "read UIDocumentPickerViewController.shared again",
                 error.message
             )
         }
