@@ -6,6 +6,7 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 class UIFragment : Fragment() {
@@ -14,7 +15,8 @@ class UIFragment : Fragment() {
     var viewController: UIViewController? = null
     var transition = com.starkbank.cocoatouch.animation.NoneTransition()
     var animated = false
-    internal var container: View? = null
+    @InternalCocoaTouchApi
+    var container: View? = null
 
     fun setBackgroundColor(color: UIColor){
         container?.setBackgroundColor(color.colorInt)

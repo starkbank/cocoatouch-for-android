@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import android.widget.ImageView
 import java.io.ByteArrayOutputStream
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 class UIImageView : UIView() {
 
@@ -22,7 +23,8 @@ class UIImageView : UIView() {
             }
         }
 
-    internal fun getImageView(): ImageView {
+    @InternalCocoaTouchApi
+    fun getImageView(): ImageView {
         return (widget as ImageView)
     }
 

@@ -6,6 +6,7 @@ import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import com.starkbank.cocoatouch.compatibility.UIKeyInput
 import com.starkbank.cocoatouch.foundation.weakReference
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 class UISearchBar : UIView() {
@@ -77,7 +78,8 @@ class UISearchBar : UIView() {
         return (widget as SearchView)
     }
 
-    internal fun getEditText(): EditText {
+    @InternalCocoaTouchApi
+    fun getEditText(): EditText {
         return getSearchView().findViewById(androidx.appcompat.R.id.search_src_text) as EditText
     }
 

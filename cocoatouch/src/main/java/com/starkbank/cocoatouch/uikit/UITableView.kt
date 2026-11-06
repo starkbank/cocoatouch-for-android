@@ -14,6 +14,7 @@ import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
 import com.starkbank.cocoatouch.foundation.NSIndexPath
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 class UITableView : UIScrollView() {
@@ -330,7 +331,8 @@ class UITableView : UIScrollView() {
         recyclerView().layoutManager = layoutManager
     }
 
-    internal fun recyclerView(): RecyclerView {
+    @InternalCocoaTouchApi
+    fun recyclerView(): RecyclerView {
         return widget as RecyclerView
     }
 

@@ -4,6 +4,7 @@ import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.foundation.NSArray
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.uikit.UIApplication.sharedApplication
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 open class UINavigationController: UIViewController() {
@@ -16,9 +17,11 @@ open class UINavigationController: UIViewController() {
             return array
         }
 
-    internal var pushViewControllers = NSMutableArray<UIViewController>()
+    @InternalCocoaTouchApi
+    var pushViewControllers = NSMutableArray<UIViewController>()
     internal var modalViewControllers = NSMutableArray<UIViewController>()
-    internal var pausedViewControllers: NSMutableArray<UIViewController>? = null
+    @InternalCocoaTouchApi
+    var pausedViewControllers: NSMutableArray<UIViewController>? = null
 
     open fun pushViewController(viewController: UIViewController, animated: Boolean) {
         if (UIApplication.activity == null) return
@@ -223,7 +226,8 @@ open class UINavigationController: UIViewController() {
         fragmentTransaction.commitAllowingStateLoss()
     }
 
-    internal fun lastViewController(array: NSArray<UIViewController>): UIViewController? {
+    @InternalCocoaTouchApi
+    fun lastViewController(array: NSArray<UIViewController>): UIViewController? {
         val lastIndex = lastIndexOfArray(array)
         return if (lastIndex >= 0) array.objectAtIndex(lastIndex) else null
     }

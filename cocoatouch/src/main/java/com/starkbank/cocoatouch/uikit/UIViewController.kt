@@ -3,6 +3,7 @@ import android.view.View
 import androidx.core.view.WindowInsetsControllerCompat
 import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 open class UIViewController: UIResponder() {
@@ -22,6 +23,7 @@ open class UIViewController: UIResponder() {
     //
     // Public Instance Methods
     //
+    @InternalCocoaTouchApi
     override fun viewWithTag(tag: Int): View {
         return this.view!!.viewWithTag(tag)
     }
@@ -64,7 +66,8 @@ open class UIViewController: UIResponder() {
         updateSystemBarBackground(color, false)
     }
 
-    internal fun updateSystemBarBackground(color: UIColor, statusBar: Boolean,
+    @InternalCocoaTouchApi
+    fun updateSystemBarBackground(color: UIColor, statusBar: Boolean,
                                           window: android.view.Window = UIApplication.activity().window) {
         // Android 15+ makes both bars transparent. Keep the existing color API by painting
         // only their insets; the screen's content and its inset handling stay unchanged.
@@ -151,7 +154,8 @@ open class UIViewController: UIResponder() {
         this.view = UIView().initWith(this, identifier)
     }
 
-    internal open fun setParentViewController(parentViewController: UIViewController?) {
+    @InternalCocoaTouchApi
+    open fun setParentViewController(parentViewController: UIViewController?) {
         this.parentViewController = parentViewController
     }
 

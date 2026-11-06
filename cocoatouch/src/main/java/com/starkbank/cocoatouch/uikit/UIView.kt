@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 open class UIView() : UIResponder() {
@@ -149,6 +150,7 @@ open class UIView() : UIResponder() {
     //
     // Public Instance Methods
     //
+    @InternalCocoaTouchApi
     override fun viewWithTag(tag: Int): View {
         if (this.fragment != null) {
             return this.fragment!!.viewWithTag(tag)
@@ -226,11 +228,13 @@ open class UIView() : UIResponder() {
         (widget).background = shape
     }
 
-    internal fun fragment(): UIFragment? {
+    @InternalCocoaTouchApi
+    fun fragment(): UIFragment? {
         return this.fragment
     }
 
-    internal fun initWith(viewController: UIViewController, identifier: Int): UIView {
+    @InternalCocoaTouchApi
+    fun initWith(viewController: UIViewController, identifier: Int): UIView {
         val fragment = UIFragment()
         fragment.identifier = identifier
         fragment.viewController = viewController

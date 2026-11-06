@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 import android.content.Context
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
 object UIApplication: UIResponder() {
@@ -7,8 +8,12 @@ object UIApplication: UIResponder() {
     var delegate: UIApplicationDelegate? = null
     var isNotificationsEnabled: Boolean = true
     var appearance: UIAppearance = UIDefaultAppearance
-    internal var storyboard: UIStoryboard? = null
-    internal var activity: UIActivity? = null
+    @InternalCocoaTouchApi
+    var storyboard: UIStoryboard? = null
+        internal set
+    @InternalCocoaTouchApi
+    var activity: UIActivity? = null
+        internal set
     internal var applicationContext: Context? = null
 
     fun sharedApplication(): UIApplication {
