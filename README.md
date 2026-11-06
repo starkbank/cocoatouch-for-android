@@ -236,7 +236,7 @@ Requirements of the consuming app:
 - `android.nonFinalResIds=false` in `gradle.properties`, so `@IBOutlet(R.id.x)` accepts the ids.
 - `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider.
 - `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.
-- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults`, `NotificationCenter` and `UIPasteboard`, exists from process start because the library initialises itself through a content provider, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups.
+- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults`, `NotificationCenter` and `UIPasteboard`, exists from process start because the library initialises itself through a content provider, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups. The provider runs only in the app's main process: an app with `android:process` components calls `UIApplication.initialize(this)` in `Application.onCreate`, and an app that wants no provider removes `com.starkbank.cocoatouch.CocoaTouchInitializer` with `tools:node="remove"` and initialises by hand.
 - A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
 - `android:configChanges="uiMode"` on the `UIStoryboard` activity, so a dark-mode switch updates `UITraitCollection` without recreating the activity (recreation resets navigation, see CT-16).
 - Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
@@ -357,7 +357,7 @@ You can set any ViewController you want.
 | `UIViewController` | `UIViewController` | yes | Default title is `javaClass.simpleName` |
 | `UINavigationController` | `UINavigationController` | yes | - |
 | `UITabBarController` | `UITabBarController` | yes | Tab layouts use `@id/cocoatouch_tab_container` |
-| `UIFragment` | Fragment (Android) | Android-specific | - |
+| `UIFragment` | Fragment (Android) | Android-specific | behind `@InternalCocoaTouchApi` |
 | `UIView` | `UIView` | yes | - |
 | `UIControl` | `UIControl` | yes | - |
 | `UILabel` | `UILabel` | yes | - |
@@ -367,7 +367,7 @@ You can set any ViewController you want.
 | `UITextField` | `UITextField` | yes | `setText` is silent |
 | `BackEditText` | none | Android-specific | - |
 | `UITextFieldDelegate` | `UITextFieldDelegate` | yes | `shouldChange` cannot veto (CT-04) |
-| `UIKeyInput` | `UIKeyInput` | yes | A class here, a protocol on Apple |
+| `UIKeyInput` | `UIKeyInput` | yes | A class here, a protocol on Apple; behind `@InternalCocoaTouchApi` |
 | `UISearchBar` | `UISearchBar` | yes | No `searchController`; cursor tint and handles only from API 29 |
 | `UISearchBarDelegate` | `UISearchBarDelegate` | yes | - |
 | `UIProgressView` | `UIProgressView` | type only, no progress API | - |
@@ -380,7 +380,7 @@ You can set any ViewController you want.
 | `UICollectionViewCell` | `UICollectionViewCell` | yes | - |
 | `UICollectionViewDataSource` | `UICollectionViewDataSource` | yes | - |
 | `UICollectionViewDelegate` | `UICollectionViewDelegate` | yes | - |
-| `UIViewHolder` | none | Android-specific | - |
+| `UIViewHolder` | none | Android-specific | behind `@InternalCocoaTouchApi` |
 | `UIRefreshControl` | `UIRefreshControl` | yes | - |
 | `UIActivityIndicatorView` | `UIActivityIndicatorView` | yes | - |
 | `UIImage` | `UIImage` | yes | - |
@@ -416,8 +416,8 @@ You can set any ViewController you want.
 | `UserDefaults` | `UserDefaults` | yes | No `set<T>`/`object`; usable before any activity |
 | `DispatchGroup` | `DispatchGroup` | yes | `leave()` without `enter()` throws |
 | `DispatchQueue` | `DispatchQueue` | yes | - |
-| `Transition` | none | Android-specific | - |
-| `NoneTransition` | none | Android-specific | - |
+| `Transition` | none | Android-specific | behind `@InternalCocoaTouchApi` |
+| `NoneTransition` | none | Android-specific | behind `@InternalCocoaTouchApi` |
 | `CGSize` | `CGSize` | yes | - |
 | `Frame` | `CGRect` | yes | - |
 | `IBAction` | `@IBAction` | yes | Validated at bind |

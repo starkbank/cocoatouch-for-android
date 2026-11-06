@@ -39,6 +39,9 @@ First release on Maven Central; every interface the library ships:
 - `DispatchGroup`
 - `@InternalCocoaTouchApi`
 - `UIDefaultAppearance`
+- `NotificationObserver`
+- `UIApplication.initialize(context)`
+- The `CocoaTouchInitializer` content provider (authority `${applicationId}.cocoatouch-initializer`)
 - `UIUserInterfaceStyle`
 - `UIApplication.appearance`
 - `UIActivity.prepareLaunch()`
@@ -67,7 +70,7 @@ Compared with 0.0.1, the only public predecessor:
 - `UIApplication` re-attaches on `onResume` too, so an activity that was only paused under a translucent one is attached again when it comes back.
 - Pops and dismisses requested while the activity's state is saved are queued in order with the pushes and applied when it restarts; every navigation transaction runs on the activity that owns the navigation controller.
 - `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
-
+- `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.
 - CT-06: popping back to the root calls `viewDidLoad` on it again (`ct06PopCallsViewDidLoadAgainOnRoot`).
@@ -85,7 +88,8 @@ Each one is pinned by a test that fails when the behaviour changes.
 
 ### Differences from the in-house framework this release was extracted from
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
-- The application context is set at process start by a content provider (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first.
+- The application context is set at process start by a content provider (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. The provider runs only in the app's main process: an app with `android:process` components calls `UIApplication.initialize(this)` in `Application.onCreate`, and an app that wants no provider removes `com.starkbank.cocoatouch.CocoaTouchInitializer` with `tools:node="remove"` and initialises by hand.
+- `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
 - `UIApplication` attaches in `onCreate`, re-attaches in `onStart` and releases on destroy.
 - `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are created once per activity and released when it is destroyed; a picker kept from a destroyed activity throws on `present()`.
 - `UIApplication.activity`/`storyboard`, `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are filled by the library and read-only for apps, which must delete their own assignments.
