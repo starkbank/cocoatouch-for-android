@@ -140,7 +140,7 @@ open class UIViewController: UIResponder() {
 
     open fun viewDidDisappear(animated: Boolean) {
         for (viewController in childViewControllers) {
-            viewController.viewWillDisappear(animated)
+            viewController.viewDidDisappear(animated)
         }
     }
 

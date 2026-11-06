@@ -2,6 +2,7 @@ package com.starkbank.cocoatouch
 
 import com.starkbank.cocoatouch.test.R
 import com.starkbank.cocoatouch.uikit.UIActivity
+import com.starkbank.cocoatouch.uikit.UIFragment
 import com.starkbank.cocoatouch.uikit.UINavigationController
 import com.starkbank.cocoatouch.uikit.UIStoryboard
 import com.starkbank.cocoatouch.uikit.UIViewController
@@ -47,4 +48,8 @@ fun navigation(activity: UIActivity): UINavigationController {
 
 fun storyboard(activity: UIActivity): UIStoryboard {
     return activity as UIStoryboard
+}
+
+fun rootController(activity: UIActivity): RecordingViewController {
+    return (activity.supportFragmentManager.fragments.first() as UIFragment).viewController as RecordingViewController
 }
