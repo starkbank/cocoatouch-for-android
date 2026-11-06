@@ -95,7 +95,7 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/starkbank/cocoatouch-for-android.git'
+                    connection = 'scm:git:https://github.com/starkbank/cocoatouch-for-android.git'
                     developerConnection = 'scm:git:ssh://github.com/starkbank/cocoatouch-for-android.git'
                     url = 'https://github.com/starkbank/cocoatouch-for-android'
                 }

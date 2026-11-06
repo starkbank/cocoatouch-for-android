@@ -12,7 +12,9 @@ on:
 permissions:
   contents: read
 
-concurrency: release
+concurrency:
+  group: release-${{ github.event_name }}
+  cancel-in-progress: false
 
 jobs:
   preflight:
@@ -58,7 +60,7 @@ jobs:
         run: |
           git fetch --no-tags origin master
           git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD
-          grep -q "^## \[$VERSION\]" CHANGELOG.md
+          grep -qF -- "## [$VERSION]" CHANGELOG.md
       - run: ./gradlew --no-daemon :cocoatouch:testDebugUnitTest
       - run: ./gradlew --no-daemon :cocoatouch:centralBundle -PVERSION_NAME="$VERSION"
         env:

@@ -29,7 +29,6 @@ jobs:
       - run: sh scripts/verify-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip 0.0.0-ci --unsigned
       - run: |
           test -d cocoatouch/src/main
-          test -d cocoatouch/src
           status=0
           grep -rnE 'com\.starkbank\.android|com\.starkauth|BuildConfig|R\.font\.' cocoatouch/src/main || status=$?
           test "$status" -eq 1
