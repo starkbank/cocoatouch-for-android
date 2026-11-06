@@ -41,7 +41,7 @@ First release on Maven Central; every interface the library ships:
 - `UIDefaultAppearance`
 - `NotificationObserver`
 - `UIApplication.initialize(context)`
-- The `CocoaTouchInitializer` content provider (authority `${applicationId}.cocoatouch-initializer`)
+- `CocoaTouchInitializer`, an androidx.startup `Initializer`
 - `UIUserInterfaceStyle`
 - `UIApplication.appearance`
 - `UIActivity.prepareLaunch()`
@@ -92,7 +92,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 
 ### Differences from the in-house framework this release was extracted from
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
-- The application context is set at process start by a content provider (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. The provider runs only in the app's main process: an app with `android:process` components calls `UIApplication.initialize(this)` in `Application.onCreate`, and an app that wants no provider removes `com.starkbank.cocoatouch.CocoaTouchInitializer` with `tools:node="remove"` and initialises by hand.
+- The application context is set before `Application.onCreate` by `CocoaTouchInitializer`, run by androidx.startup's `InitializationProvider` (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, add `<meta-data android:name="com.starkbank.cocoatouch.CocoaTouchInitializer" tools:node="remove" />` inside the provider element.
 - `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
 - `UIApplication` attaches in `onCreate`, re-attaches in `onStart`, in `onResume` and when the activity becomes the top resumed one (API 29+ multi-window), and releases on destroy.
 - `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are created once per activity and released when it is destroyed; a picker kept from a destroyed activity throws on `present()`.
