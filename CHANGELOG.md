@@ -62,6 +62,7 @@ Compared with 0.0.1, the only public predecessor:
 - `@IBAction` is validated at bind: exactly one sender parameter, a concrete sender type with a public no-argument constructor, and an existing view id, each failure an `IllegalStateException` naming the controller, method and id; 0.0.1 bound without checks.
 - An exception thrown by an `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
 - `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked; 0.0.1 read only the leaf class and passed a fresh `UIButton`.
+- `NotificationCenter.addObserver` returns a `NotificationObserver` and `removeObserver(observer)` removes exactly that one; the no-argument `removeObserver()` is deprecated and removes every registered observer, where 0.0.1 kept a single slot, so it unregistered only the last observer and leaked the others.
 
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.

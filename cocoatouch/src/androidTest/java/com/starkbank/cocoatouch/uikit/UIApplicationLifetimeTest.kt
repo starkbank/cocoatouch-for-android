@@ -15,6 +15,7 @@ import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.foundation.NotificationCenter
+import com.starkbank.cocoatouch.foundation.NotificationObserver
 import com.starkbank.cocoatouch.foundation.UserDefaults
 import com.starkbank.cocoatouch.navigation
 import com.starkbank.cocoatouch.onMain
@@ -123,13 +124,14 @@ class UIApplicationLifetimeTest {
     fun readersWorkAfterClose() {
         scenario.close()
         var notified = false
+        lateinit var observer: NotificationObserver
         instrumentation.runOnMainSync {
-            NotificationCenter.addObserver({ notified = true }, "afterClose")
+            observer = NotificationCenter.addObserver({ notified = true }, "afterClose")
             NotificationCenter.postNotification("afterClose")
             UIPasteboard.general.string = "afterClose"
         }
         instrumentation.waitForIdleSync()
-        instrumentation.runOnMainSync { NotificationCenter.removeObserver() }
+        instrumentation.runOnMainSync { NotificationCenter.removeObserver(observer) }
         assertEquals("afterClose", UIPasteboard.general.string)
         assertEquals(true, notified)
     }
