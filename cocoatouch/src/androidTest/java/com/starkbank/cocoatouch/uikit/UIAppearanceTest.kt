@@ -120,13 +120,13 @@ class UIAppearanceTest {
         }
     }
 
-    // AppCompat resets the resources to the system uiMode inside super.onConfigurationChanged, so a night
-    // configuration cannot be injected; seed the opposite style and expect it to be refreshed from the resources
     private fun oppositeOf(style: UIUserInterfaceStyle): UIUserInterfaceStyle {
         if (style == UIUserInterfaceStyle.dark) return UIUserInterfaceStyle.light
         return UIUserInterfaceStyle.dark
     }
 
+    // AppCompat resets the resources to the system uiMode inside super.onConfigurationChanged, so a night
+    // configuration cannot be injected; seed the opposite style and expect it to be refreshed from the resources
     @Test
     fun configurationChangeUpdatesTheTraitCollection() {
         scenario.onActivity { activity ->
