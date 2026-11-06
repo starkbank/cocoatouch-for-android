@@ -80,7 +80,7 @@ class UIAppearanceTest {
 
     @Test
     fun switchTrackUsesAppearanceBorderColor() {
-        UIApplication.appearance = TestAppearance(border = "#123456")
+        UIApplication.appearance = TestAppearance(border = "#123456", action = "#ABCDEF")
         instrumentation.runOnMainSync {
             val uiSwitch = UISwitch().apply { widget = SwitchCompat(UIApplication.context()) }
             uiSwitch.onTintColor = UIColor("#000000")
@@ -122,12 +122,16 @@ class UIAppearanceTest {
 
     // AppCompat resets the resources to the system uiMode inside super.onConfigurationChanged, so a night
     // configuration cannot be injected; seed the opposite style and expect it to be refreshed from the resources
+    private fun oppositeOf(style: UIUserInterfaceStyle): UIUserInterfaceStyle {
+        if (style == UIUserInterfaceStyle.dark) return UIUserInterfaceStyle.light
+        return UIUserInterfaceStyle.dark
+    }
+
     @Test
     fun configurationChangeUpdatesTheTraitCollection() {
         scenario.onActivity { activity ->
             val expected = UITraitCollection.from(activity.resources.configuration.uiMode).userInterfaceStyle
-            val stale = if (expected == UIUserInterfaceStyle.dark) UIUserInterfaceStyle.light else UIUserInterfaceStyle.dark
-            UITraitCollection.current = UITraitCollection(stale)
+            UITraitCollection.current = UITraitCollection(oppositeOf(expected))
             activity.onConfigurationChanged(Configuration(activity.resources.configuration))
             assertEquals(expected, UITraitCollection.current.userInterfaceStyle)
         }

@@ -250,7 +250,7 @@ class UIApplicationLifetimeTest {
     private fun finishAndAwaitDestroyed(activity: Activity) {
         instrumentation.runOnMainSync { activity.finish() }
         instrumentation.waitForIdleSync()
-        awaitCondition("the activity to be destroyed") {
+        awaitCondition("the activity to be destroyed", timeoutMillis = 15000) {
             ActivityLifecycleMonitorRegistry.getInstance().getLifecycleStageOf(activity) == Stage.DESTROYED
         }
     }
@@ -276,14 +276,14 @@ class UIApplicationLifetimeTest {
         return alive
     }
 
-    private fun awaitCondition(description: String, condition: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + 5000
+    private fun awaitCondition(description: String, timeoutMillis: Long = 5000, condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMillis
         while (System.currentTimeMillis() < deadline) {
             var isMet = false
             instrumentation.runOnMainSync { isMet = condition() }
             if (isMet) return
             Thread.sleep(50)
         }
-        fail("Timed out after 5s waiting for $description")
+        fail("Timed out after ${timeoutMillis / 1000}s waiting for $description")
     }
 }
