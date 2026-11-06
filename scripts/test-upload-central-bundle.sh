@@ -23,6 +23,9 @@ for arg in "$@"; do
 done
 echo "$method $url" >> "$STUB_DIR/calls"
 case "$url" in
+    */published*)
+        echo "{\"published\":$(cat "$STUB_DIR/published")}"
+        ;;
     */upload*)
         if [ "$(cat "$STUB_DIR/upload")" = "401" ]; then
             echo '{"error":"unauthorized"}'
@@ -36,6 +39,10 @@ case "$url" in
         echo "$count" > "$STUB_DIR/pollCount"
         answer=$(sed -n "${count}p" "$STUB_DIR/polls")
         [ -n "$answer" ] || answer=$(tail -n 1 "$STUB_DIR/polls")
+        if [ "$answer" = "notjson" ]; then
+            echo '<html>oops</html>'
+            exit 0
+        fi
         if [ "$answer" = "503" ]; then
             echo '{"error":"unavailable"}'
             exit 22
@@ -67,11 +74,11 @@ run() {
     scenario=$1
     mode=$2
     expectedCode=$3
-    attempts=$4
+    attemptCount=$4
     rm -f "$work/calls" "$work/pollCount" "$work/summary" "$work/stdins" "$work/argvs"
     : > "$work/summary"
     code=0
-    PATH="$work/bin:$PATH" CENTRAL_POLL_ATTEMPTS=$attempts sh "$script" "$work/bundle.zip" cocoatouch-test "$mode" > "$work/out" 2> "$work/err" || code=$?
+    PATH="$work/bin:$PATH" CENTRAL_POLL_ATTEMPTS=$attemptCount sh "$script" "$work/bundle.zip" "${deploymentName:-cocoatouch-test}" "$mode" 1.2.3 > "$work/out" 2> "$work/err" || code=$?
     [ "$code" -eq "$expectedCode" ] || fail "exit $code, expected $expectedCode"
 }
 
@@ -86,12 +93,15 @@ expectDeleteCount() {
 
 echo 200 > "$work/upload"
 echo 200 > "$work/delete"
+echo false > "$work/published"
 
 printf 'VALIDATED\n' > "$work/polls"
 run validatedKeep keep 0 3
 expectSummary "deployment dep-42 uploaded
 deployment dep-42 VALIDATED"
 expectDeleteCount 0
+grep -Fq 'publishingType=USER_MANAGED' "$work/argvs" || fail "publishingType missing"
+! grep -q '^POST .*/deployment/' "$work/calls" || fail "unexpected POST to deployment"
 echo "ok: validatedKeep"
 
 run validatedDrop drop 0 3
@@ -99,6 +109,8 @@ expectSummary "deployment dep-42 uploaded
 deployment dep-42 VALIDATED
 deployment dep-42 dropped"
 expectDeleteCount 1
+grep -Fq 'publishingType=USER_MANAGED' "$work/argvs" || fail "publishingType missing"
+! grep -q '^POST .*/deployment/' "$work/calls" || fail "unexpected POST to deployment"
 grep -Fq 'deployment dep-42 dropped' "$work/out" || fail "dropped not printed"
 echo "ok: validatedDrop"
 
@@ -142,17 +154,38 @@ echo "ok: pollAttemptCounts"
 printf 'VALIDATED\n' > "$work/polls"
 run tokenOnStdinOnly drop 0 3
 ! grep -q 'Bearer' "$work/argvs" || fail "token in argv"
-! grep -v '^Authorization: Bearer ' "$work/stdins" || fail "stdin without header"
+expectedHeader="Authorization: Bearer $(printf 'fakeUser:fakePassword' | base64 | tr -d '\n')"
+! grep -vFx "$expectedHeader" "$work/stdins" || fail "stdin header is not the expected token"
 [ "$(wc -l < "$work/stdins" | tr -d ' ')" = "$(wc -l < "$work/calls" | tr -d ' ')" ] || fail "a call without stdin header"
 echo "ok: tokenOnStdinOnly"
 
 echo 500 > "$work/delete"
 run deleteFailsAfterValidatedDrop drop 1 3
 expectSummary "deployment dep-42 uploaded
-deployment dep-42 VALIDATED"
+deployment dep-42 VALIDATED
+deployment dep-42 VALIDATED, drop failed"
 grep -Fq 'delete refused' "$work/err" || fail "delete body not on stderr"
 echo 200 > "$work/delete"
 echo "ok: deleteFailsAfterValidatedDrop"
+
+printf 'notjson\nVALIDATED\n' > "$work/polls"
+run pollBodyNotJson keep 0 3
+grep -Fq '<html>oops' "$work/err" || fail "non-json body not on stderr"
+echo "ok: pollBodyNotJson"
+
+echo true > "$work/published"
+run alreadyPublished keep 1 3
+expectSummary ""
+! grep -q '/upload' "$work/calls" || fail "uploaded an already published version"
+grep -Fq 'version 1.2.3 is already published' "$work/err" || fail "message not on stderr"
+echo false > "$work/published"
+echo "ok: alreadyPublished"
+
+deploymentName='x&publishingType=AUTOMATIC#'
+run badName keep 2 3
+deploymentName=
+[ ! -s "$work/calls" ] || fail "curl called for a bad name"
+echo "ok: badName"
 
 run badMode purge 2 3
 expectSummary ""
