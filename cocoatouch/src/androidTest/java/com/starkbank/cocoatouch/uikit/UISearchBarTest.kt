@@ -1,6 +1,7 @@
 package com.starkbank.cocoatouch.uikit
 
 import android.graphics.Color
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.appcompat.widget.SearchView
@@ -22,6 +23,7 @@ class UISearchBarTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var scenario: ActivityScenario<TestStoryboard>
     private lateinit var searchBar: UISearchBar
+    private lateinit var container: FrameLayout
     private lateinit var delegate: RecordingSearchBarDelegate
 
     @Before
@@ -30,7 +32,7 @@ class UISearchBarTest {
         instrumentation.runOnMainSync {
             val activity = UIApplication.context() as android.app.Activity
             val searchView = SearchView(activity)
-            val container = FrameLayout(activity).apply {
+            container = FrameLayout(activity).apply {
                 isFocusable = true
                 isFocusableInTouchMode = true
                 addView(searchView)
@@ -42,11 +44,29 @@ class UISearchBarTest {
 
     @After
     fun close() {
+        instrumentation.setInTouchMode(true)
         scenario.close()
     }
 
     @Test
     fun answeringFalseClearsFocus() {
+        instrumentation.runOnMainSync {
+            searchBar.delegate = RecordingSearchBarDelegate(answer = false).also { delegate = it }
+            searchBar.getEditText().requestFocus()
+            assertEquals(1, delegate.calls)
+            assertFalse(searchBar.getEditText().hasFocus())
+        }
+    }
+
+    @Test
+    fun answeringFalseWithNoOtherFocusableViewEndsUnfocused() {
+        instrumentation.runOnMainSync {
+            container.isFocusable = false
+            container.isFocusableInTouchMode = false
+        }
+        instrumentation.setInTouchMode(false)
+        instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_TAB)
+        instrumentation.waitForIdleSync()
         instrumentation.runOnMainSync {
             searchBar.delegate = RecordingSearchBarDelegate(answer = false).also { delegate = it }
             searchBar.getEditText().requestFocus()
