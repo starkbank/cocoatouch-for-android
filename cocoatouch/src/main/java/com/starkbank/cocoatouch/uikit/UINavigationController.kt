@@ -175,6 +175,14 @@ open class UINavigationController: UIViewController() {
     }
 
     internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
+        //
+        // When Activity is paused, you can not perform this
+        //
+        if (this.pausedViewControllers != null) {
+            this.pausedViewControllers?.addObject(viewController)
+            return
+        }
+
         if (UIApplication.activity == null) return
         val activity = sharedApplication().activity()
         //
@@ -188,14 +196,6 @@ open class UINavigationController: UIViewController() {
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
         //
         sharedApplication().isNotificationsEnabled = true
-
-        //
-        // When Activity is paused, you can not perform this
-        //
-        if (this.pausedViewControllers != null) {
-            this.pausedViewControllers?.addObject(viewController)
-            return
-        }
 
         val storyboard = viewController.storyboard
         val fragment = viewController.view?.fragment()

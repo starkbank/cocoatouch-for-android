@@ -185,14 +185,25 @@ class UIApplicationLifetimeTest {
     fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
-        onMain {
-            val pushed = storyboard(first).instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_pushed)
-            navigation(first).pushViewController(pushed, false)
-        }
+        onMain { navigation(first).pushViewController(pushedController(first), false) }
         finishAndAwaitDestroyed(top)
         awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
         assertEquals(2, navigation(first).viewControllers.size)
         awaitCondition("the queued push to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
+    }
+
+    @Test
+    fun pushWhileTheTopIsFinishingIsQueuedForTheActivityBelow() {
+        val first = scenarioActivity()
+        val top = launchSecondInstance(first)
+        awaitCondition("first has a paused queue") { navigation(first).pausedViewControllers != null }
+        instrumentation.runOnMainSync {
+            top.finish()
+            navigation(first).pushViewController(pushedController(first), false)
+        }
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        awaitCondition("queued push reached the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
+        assertEquals(2, navigation(first).viewControllers.size)
     }
 
     @Test
@@ -210,6 +221,10 @@ class UIApplicationLifetimeTest {
             application.unregisterActivityLifecycleCallbacks(callbacks)
         }
         assertEquals(listOf("prepareLaunch", "created"), events.take(2))
+    }
+
+    private fun pushedController(activity: TestStoryboard): UIViewController {
+        return storyboard(activity).instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_pushed)
     }
 
     private fun scenarioActivity(): TestStoryboard {
