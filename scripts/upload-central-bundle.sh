@@ -22,6 +22,15 @@ case "$version" in
     ''|*[!A-Za-z0-9.-]*) echo "version must match [A-Za-z0-9.-]"; exit 2 ;;
 esac
 
+case "$mode" in
+    keep) expected="cocoatouch-$version" ;;
+    drop) expected="cocoatouch-$version-dryrun-*" ;;
+esac
+case "$name" in
+    $expected) ;;
+    *) echo "a $mode upload needs a deployment named $expected"; exit 2 ;;
+esac
+
 token=$(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 | tr -d '\n')
 echo "::add-mask::$token"
 
@@ -58,6 +67,11 @@ published=$(printf '%s' "$body" | jq -r '.published') || { printf '%s\n' "$body"
 [ "$published" != "true" ] || { echo "version $version is already published" >&2; exit 1; }
 
 id=$(call -F "bundle=@$zip" "$api/upload?publishingType=USER_MANAGED&name=$name") || { printf '%s\n' "$id" >&2; id=; exit 1; }
+hex4='[0-9a-f][0-9a-f][0-9a-f][0-9a-f]'
+case "$id" in
+    $hex4$hex4-$hex4-$hex4-$hex4-$hex4$hex4$hex4) ;;
+    *) printf '%s\n' "$id" >&2; id=; exit 1 ;;
+esac
 record uploaded
 
 attemptCount=0

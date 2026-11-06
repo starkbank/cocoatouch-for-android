@@ -43,13 +43,17 @@ jobs:
       - if: github.event_name == 'workflow_dispatch'
         env:
           VERSION_INPUT: ${{ inputs.version }}
-        run: '[[ "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] && echo "VERSION=$VERSION_INPUT" >> "$GITHUB_ENV"'
+        run: |
+          [[ "$VERSION_INPUT" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.]+$ ]]
+          echo "VERSION=$VERSION_INPUT" >> "$GITHUB_ENV"
+          echo "DEPLOYMENT=cocoatouch-$VERSION_INPUT-dryrun-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
       - if: github.event_name == 'release'
         run: |
           VERSION=$(sed -n 's/^VERSION_NAME=//p' gradle.properties)
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]
           test "$GITHUB_REF_NAME" = "v$VERSION"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "DEPLOYMENT=cocoatouch-$VERSION" >> "$GITHUB_ENV"
       - if: github.event_name == 'release'
         run: |
           git fetch --no-tags origin master
@@ -62,7 +66,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
       - run: sh scripts/verify-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip "$VERSION"
       - run: test "$(unzip -Z1 cocoatouch/build/distributions/central-bundle.zip | grep -c '\.asc$')" = "5"
-      - run: sh scripts/upload-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip "cocoatouch-$VERSION" "$MODE" "$VERSION"
+      - run: sh scripts/upload-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip "$DEPLOYMENT" "$MODE" "$VERSION"
         env:
           MODE: ${{ github.event_name == 'release' && 'keep' || 'drop' }}
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
