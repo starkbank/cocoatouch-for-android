@@ -56,6 +56,7 @@ First release on Maven Central; every interface the library ships:
 - `NotificationCenter` delivers to its observers directly on the main thread and no longer uses `LocalBroadcastManager`, which is not a dependency anymore; a receiver the app registered with `LocalBroadcastManager` for a notification name no longer fires.
 Compared with 0.0.1, the only public predecessor:
 - A `UITextField` keeps a single `TextWatcher`, and a programmatic `setText` does not notify it.
+- After `resignFirstResponder` a `UITextField` stays reachable for TalkBack's double-tap and the keyboard's Next action; 0.0.1 left it unfocusable in touch mode until it was tapped again.
 - `popToRootViewController` removes every pushed controller; 0.0.1 popped back to the root's class name.
 - Paused navigation transitions are drained once, after the activity re-attaches in `onStart`, and no longer in `onRestart`.
 - `viewDidDisappear` is forwarded to child controllers as `viewDidDisappear`; 0.0.1 forwarded it as `viewWillDisappear`.

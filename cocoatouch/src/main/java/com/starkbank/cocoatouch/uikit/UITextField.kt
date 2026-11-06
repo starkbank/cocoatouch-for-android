@@ -90,8 +90,11 @@ open class UITextField : UIControl() {
 
     fun resignFirstResponder() {
         textFieldDidFinishEditing()
+        // Before Android P clearFocus hands focus to the first focusable view in touch mode, so the field steps out of
+        // that search while it clears and is made reachable again right after
         this.editText().isFocusableInTouchMode = false
         this.editText().clearFocus()
+        this.editText().isFocusableInTouchMode = true
         UIKeyInput.getInputMethodManager()?.hideSoftInputFromWindow(this.editText().windowToken, 0)
     }
 
