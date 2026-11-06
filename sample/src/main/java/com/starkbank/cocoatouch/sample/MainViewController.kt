@@ -1,4 +1,4 @@
-package com.starkbank.android
+package com.starkbank.cocoatouch.sample
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.uikit.*
 

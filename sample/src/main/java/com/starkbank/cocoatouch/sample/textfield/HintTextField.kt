@@ -1,4 +1,4 @@
-package com.starkbank.android.textfield
+package com.starkbank.cocoatouch.sample.textfield
 import com.starkbank.cocoatouch.uikit.UITextField
 
 

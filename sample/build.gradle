@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'com.starkbank.android'
+    namespace 'com.starkbank.cocoatouch.sample'
     compileSdk 36
 
     defaultConfig {
-        applicationId 'com.starkbank.android.sample'
+        applicationId 'com.starkbank.cocoatouch.sample'
         minSdk 25
         targetSdk 36
         versionCode 1

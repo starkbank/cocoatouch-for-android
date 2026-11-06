@@ -1,9 +1,9 @@
-package com.starkbank.android
+package com.starkbank.cocoatouch.sample
 import android.content.res.Resources
-import com.starkbank.android.activityindicator.ActivityIndicatorViewController
-import com.starkbank.android.tableview.TableViewCell
-import com.starkbank.android.tableview.TableViewController
-import com.starkbank.android.textfield.TextFieldViewController
+import com.starkbank.cocoatouch.sample.activityindicator.ActivityIndicatorViewController
+import com.starkbank.cocoatouch.sample.tableview.TableViewCell
+import com.starkbank.cocoatouch.sample.tableview.TableViewController
+import com.starkbank.cocoatouch.sample.textfield.TextFieldViewController
 import com.starkbank.cocoatouch.uikit.UIApplicationDelegate
 import com.starkbank.cocoatouch.uikit.UIStoryboard
 import com.starkbank.cocoatouch.uikit.UITableViewCell

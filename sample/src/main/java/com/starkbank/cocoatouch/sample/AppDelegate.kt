@@ -1,4 +1,4 @@
-package com.starkbank.android
+package com.starkbank.cocoatouch.sample
 import com.starkbank.cocoatouch.uikit.UIApplication
 import com.starkbank.cocoatouch.uikit.UIApplicationDelegate
 import com.starkbank.cocoatouch.uikit.UIResponder

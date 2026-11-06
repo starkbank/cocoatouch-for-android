@@ -1,4 +1,4 @@
-package com.starkbank.android
+package com.starkbank.cocoatouch.sample
 
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack

@@ -1,5 +1,5 @@
-package com.starkbank.android.textfield
-import com.starkbank.android.R
+package com.starkbank.cocoatouch.sample.textfield
+import com.starkbank.cocoatouch.sample.R
 import com.starkbank.cocoatouch.annotation.IBOutlet
 import com.starkbank.cocoatouch.uikit.UITextField
 import com.starkbank.cocoatouch.uikit.UIViewController

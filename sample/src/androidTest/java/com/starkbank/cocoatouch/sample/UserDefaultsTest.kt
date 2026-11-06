@@ -1,4 +1,4 @@
-package com.starkbank.android
+package com.starkbank.cocoatouch.sample
 
 import android.content.Context
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -19,7 +19,7 @@ class UserDefaultsTest {
     fun preferencesFileIsNamedAfterPackageNameAndKey() {
         activityRule.scenario.onActivity { activity ->
             UserDefaults.standard.set(true, "cocoatouchFlag")
-            val preferences = activity.getSharedPreferences("com.starkbank.android.samplecocoatouchFlag", Context.MODE_PRIVATE)
+            val preferences = activity.getSharedPreferences("com.starkbank.cocoatouch.samplecocoatouchFlag", Context.MODE_PRIVATE)
             assertTrue(preferences.getBoolean("cocoatouchFlag", false))
         }
     }

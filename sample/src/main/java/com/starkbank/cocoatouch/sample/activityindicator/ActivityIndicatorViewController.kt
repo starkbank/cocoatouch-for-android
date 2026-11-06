@@ -1,5 +1,5 @@
-package com.starkbank.android.activityindicator
-import com.starkbank.android.R
+package com.starkbank.cocoatouch.sample.activityindicator
+import com.starkbank.cocoatouch.sample.R
 import com.starkbank.cocoatouch.annotation.IBAction
 import com.starkbank.cocoatouch.annotation.IBOutlet
 import com.starkbank.cocoatouch.compatibility.DefaultActions
