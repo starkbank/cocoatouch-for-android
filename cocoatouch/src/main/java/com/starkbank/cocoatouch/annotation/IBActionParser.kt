@@ -1,6 +1,7 @@
 package com.starkbank.cocoatouch.annotation
 import android.view.View
 import com.starkbank.cocoatouch.compatibility.DefaultActions
+import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import java.lang.reflect.InvocationTargetException
@@ -43,10 +44,12 @@ object IBActionParser {
     private fun parse(method: Method, controller: UIResponder) {
         val action = method.getAnnotation(IBAction::class.java)!!
 
-        checkSender(method, controller)
-        if (action.value == DefaultActions.onBackPressed)
+        val type = senderType(method, controller)
+        if (action.value == DefaultActions.onBackPressed) {
+            checkBackSender(type, method, controller)
             return
-
+        }
+        checkClickSender(type, method, controller)
         val view = viewOf(action.value, method, controller)
         view.setOnClickListener {
             try {
@@ -57,12 +60,23 @@ object IBActionParser {
         }
     }
 
-    private fun checkSender(method: Method, controller: UIResponder) {
-        if (method.parameterTypes.size != 1)
-            throw IllegalStateException(
-                "@IBAction ${method.name} in ${controller.javaClass.simpleName} must declare exactly one sender parameter"
-            )
-        val type = method.parameterTypes[0]
+    private fun senderType(method: Method, controller: UIResponder): Class<*> {
+        if (method.parameterTypes.size == 1) return method.parameterTypes[0]
+        throw IllegalStateException(
+            "@IBAction ${method.name} in ${controller.javaClass.simpleName} must declare exactly one sender parameter"
+        )
+    }
+
+    // dispatchBackPressed always sends a UIButton, so the parameter only has to receive one
+    private fun checkBackSender(type: Class<*>, method: Method, controller: UIResponder) {
+        if (type.isAssignableFrom(UIButton::class.java)) return
+        throw IllegalStateException(
+            "@IBAction ${method.name} in ${controller.javaClass.simpleName}: " +
+                "back handler sender type ${type.simpleName} cannot receive a UIButton"
+        )
+    }
+
+    private fun checkClickSender(type: Class<*>, method: Method, controller: UIResponder) {
         if (!UIResponder::class.java.isAssignableFrom(type)) {
             if (type.isAssignableFrom(UIView::class.java)) return
             throw IllegalStateException(

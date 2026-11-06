@@ -5,6 +5,7 @@ import android.widget.FrameLayout
 import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UIResponder
+import com.starkbank.cocoatouch.uikit.UITextField
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import org.junit.Assert.assertEquals
@@ -57,6 +58,16 @@ class StringSenderFixture : UIViewController() {
 class AnySenderFixture : UIViewController() {
 
     @IBAction(1) fun act(sender: Any) {}
+}
+
+class TextFieldBackFixture : UIViewController() {
+
+    @IBAction(DefaultActions.onBackPressed) fun back(sender: UITextField) {}
+}
+
+class ButtonBackFixture : UIViewController() {
+
+    @IBAction(DefaultActions.onBackPressed) fun back(sender: UIButton) {}
 }
 
 class NoSenderBackFixture : UIViewController() {
@@ -124,6 +135,17 @@ class IBActionParserTest {
     fun backHandlerWithoutSenderFailsAtBind() {
         val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(NoSenderBackFixture()) }
         assertTrue(error.message!!.contains("exactly one sender parameter"))
+    }
+
+    @Test
+    fun backHandlerSenderMustReceiveAUIButton() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(TextFieldBackFixture()) }
+        assertTrue(error.message!!.contains("cannot receive a UIButton"))
+    }
+
+    @Test
+    fun backHandlerReceivingAUIButtonBinds() {
+        IBActionParser.parse(ButtonBackFixture())
     }
 
     @Test
