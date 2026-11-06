@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -16,9 +17,11 @@ import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CopyOnWriteArrayList
 
 @RunWith(AndroidJUnit4::class)
 class KnownGapInstrumentedTest {
@@ -63,13 +66,18 @@ class KnownGapInstrumentedTest {
     // Pins audit CT-07: willDisplay only fires from onScrolled for the last visible row. Not fixed in this version.
     @Test
     fun ct07WillDisplaySkipsRowsBeforeTheLastVisible() {
-        val displayedRows = mutableListOf<Int>()
+        val displayedRows = CopyOnWriteArrayList<Int>()
+        lateinit var list: RecyclerView
         scenario.onActivity { activity ->
             val context = UIApplication.context()
             val tableView = UITableView().apply { widget = RecyclerView(context) }
             val container = FrameLayout(context)
-            container.addView(tableView.recyclerView())
-            activity.addContentView(container, FrameLayout.LayoutParams(-1, -1))
+            list = tableView.recyclerView()
+            container.addView(list)
+            activity.addContentView(
+                container,
+                FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            )
             tableView.setDataSource(object : UITableViewDataSource {
                 override fun tableViewNumberOfRowsInSection(tableView: UITableView, section: Int): Int = 3
 
@@ -88,8 +96,17 @@ class KnownGapInstrumentedTest {
                 }
             })
         }
-        instrumentation.waitForIdleSync()
-        assertFalse(0 in displayedRows)
+        // The main thread must stay free to lay the list out, so the wait polls from the test thread
+        var waitedMs = 0
+        while (displayedRows.isEmpty() && waitedMs < 5000) {
+            Thread.sleep(50)
+            waitedMs += 50
+        }
+        onMain {
+            assertTrue("table never reported a row, childCount=${list.childCount}", displayedRows.isNotEmpty())
+            assertEquals(listOf(2), displayedRows.toList())
+            assertFalse(0 in displayedRows)
+        }
     }
 
     // Pins audit CT-16: a recreated activity gets a new navigation controller holding only the initial controller.
