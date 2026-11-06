@@ -87,8 +87,8 @@ open class UIActivity: AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (UIApplication.activity === this) return
-        UIApplication.attach(this)
+        if (UIApplication.activity !== this) UIApplication.attach(this)
+        finishPausedTransitions()
     }
 
     override fun onDestroy() {
@@ -100,7 +100,6 @@ open class UIActivity: AppCompatActivity() {
         super.onRestart()
         val application = UIApplication.sharedApplication()
         application.delegate?.applicationDidBecomeActive(application)
-        finishPausedTransitions()
         isInBackground = false
     }
 

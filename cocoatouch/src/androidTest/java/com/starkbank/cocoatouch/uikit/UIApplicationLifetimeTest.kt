@@ -16,6 +16,9 @@ import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.foundation.NotificationCenter
 import com.starkbank.cocoatouch.foundation.UserDefaults
 import com.starkbank.cocoatouch.navigation
+import com.starkbank.cocoatouch.onMain
+import com.starkbank.cocoatouch.storyboard
+import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -154,6 +157,20 @@ class UIApplicationLifetimeTest {
         finishAndAwaitDestroyed(first)
         instrumentation.runOnMainSync { assertSame(top, UIApplication.activity()); assertNotNull(UIImagePickerController.shared) }
         finishAndAwaitDestroyed(top)
+    }
+
+    @Test
+    fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
+        val first = scenarioActivity()
+        val top = launchSecondInstance(first)
+        onMain {
+            val pushed = storyboard(first).instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_pushed)
+            navigation(first).pushViewController(pushed, false)
+        }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        assertEquals(2, navigation(first).viewControllers.size)
+        awaitCondition("the queued push to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
     }
 
     @Test
