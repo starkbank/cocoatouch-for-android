@@ -403,7 +403,7 @@ You can set any ViewController you want.
 | `UIDefaultAppearance` | none | Android-specific | Default `UIAppearance` |
 | `UITraitCollection` | `UITraitCollection` | yes | `userInterfaceStyle` only |
 | `UIUserInterfaceStyle` | `UIUserInterfaceStyle` | yes | - |
-| `WKWebView` | `WKWebView` | yes | - |
+| `WKWebView` | `WKWebView` | yes | User scripts run only on the origin passed to `load`; navigation is not restricted |
 | `WKWebViewConfiguration` | `WKWebViewConfiguration` | yes | - |
 | `WKUserContentController` | `WKUserContentController` | yes | - |
 | `WKUserScript` | `WKUserScript` | yes | - |
