@@ -53,7 +53,9 @@ open class WKWebView: UIView() {
 
 private val urlPattern = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):(?://([^/?#]*))?")
 
-// Mirrors JS location.protocol + '//' + location.host: lowercase scheme, punycode host, port only when written
+private val defaultPorts = mapOf("https" to ":443", "http" to ":80")
+
+// Mirrors JS location.protocol + '//' + location.host: lowercase scheme, punycode host, port unless it is the scheme's default
 internal fun originOf(url: String): String {
     val match = urlPattern.find(url) ?: return ""
     val scheme = match.groupValues[1].lowercase(Locale.ROOT)
@@ -61,7 +63,8 @@ internal fun originOf(url: String): String {
     val portIndex = authority.lastIndexOf(':')
     val hasPort = portIndex >= 0 && !authority.endsWith("]")
     val host = if (hasPort) authority.substring(0, portIndex) else authority
-    val port = if (hasPort) authority.substring(portIndex) else ""
+    val written = if (hasPort) authority.substring(portIndex) else ""
+    val port = if (written == defaultPorts[scheme]) "" else written
     return "$scheme://${asciiHost(host)}$port"
 }
 

@@ -120,10 +120,12 @@ open class UINavigationController: UIViewController() {
         //
         sharedApplication().isNotificationsEnabled = true
 
+        // The drain replays without animation, as the old drain forced animated = false
+        // Evaluated first: it opens the queue and the paused list that the next line fills
+        val isQueued = pausedQueue() != null
+        val animates = animated && !isQueued
         this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
-        // The drain replays without animation, as the old drain forced animated = false
-        val animates = animated && pausedQueue() == null
         transact { commitModal(viewController, animates, addsToBackStack) }
     }
 
@@ -145,9 +147,11 @@ open class UINavigationController: UIViewController() {
     }
 
     internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
+        // Evaluated first: it opens the queue and the paused list that the next line fills
+        val isQueued = pausedQueue() != null
+        val animates = animated && !isQueued
         this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
-        val animates = animated && pausedQueue() == null
         transact { commitPush(viewController, animates, addsToBackStack) }
     }
 
@@ -239,7 +243,10 @@ open class UINavigationController: UIViewController() {
     private fun pausedQueue(): MutableList<() -> Unit>? {
         val queue = this.pausedTransactions
         if (queue != null) return queue
+        // Only UIActivity drains a queue, and only its own controller's
+        if (this.owner == null) return null
         if (ownerActivity()?.supportFragmentManager?.isStateSaved != true) return null
+        this.pausedViewControllers = this.pausedViewControllers ?: NSMutableArray()
         return mutableListOf<() -> Unit>().also { this.pausedTransactions = it }
     }
 

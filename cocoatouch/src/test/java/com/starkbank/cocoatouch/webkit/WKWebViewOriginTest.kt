@@ -11,6 +11,14 @@ class WKWebViewOriginTest {
     }
 
     @Test
+    fun theDefaultPortOfTheSchemeIsDroppedLikeLocationHost() {
+        assertEquals("https://a", originOf("https://a:443/x"))
+        assertEquals("http://a", originOf("http://a:80/"))
+        assertEquals("https://a:8443", originOf("https://a:8443/"))
+        assertEquals("https://a:80", originOf("https://a:80/"))
+    }
+
+    @Test
     fun userInformationIsNotPartOfTheOrigin() {
         assertEquals("https://host", originOf("https://user@host/"))
     }

@@ -28,12 +28,14 @@ class TestStoryboard : UIStoryboard() {
     }
 
     // Lets a test observe a failure of the queued transactions replayed by onStart without crashing the process
+    var capturesStartFailure = false
     var startFailure: Throwable? = null
 
     override fun onStart() {
         try {
             super.onStart()
         } catch (error: Throwable) {
+            if (!capturesStartFailure) throw error
             startFailure = error
         }
     }

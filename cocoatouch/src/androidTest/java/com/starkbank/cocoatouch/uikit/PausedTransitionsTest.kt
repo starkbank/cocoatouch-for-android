@@ -226,6 +226,7 @@ class PausedTransitionsTest {
     @Test
     fun presentingAStoryboardLessControllerWhilePausedThrowsOnRestart() {
         val activity = launchedActivity()
+        activity.capturesStartFailure = true
         scenario.moveToState(Lifecycle.State.CREATED)
         onMain { navigation(activity).presentViewController(PushedViewController(), false) }
         assertNull(activity.startFailure)
@@ -233,6 +234,38 @@ class PausedTransitionsTest {
         val failure = activity.startFailure
         assertTrue(failure is NullPointerException)
         assertTrue(failure!!.stackTrace.any { it.methodName == "commitModal" })
+    }
+
+    @Test
+    fun pushRightAfterSuperOnStopIsListedAsPausedAndAppliedOnRestart() {
+        val activity = launchedActivity()
+        val pushed = pushedController(activity)
+        activity.afterStop = { navigation(activity).pushViewController(pushed, false) }
+        scenario.moveToState(Lifecycle.State.CREATED)
+        assertEquals(1, navigation(activity).pausedViewControllers?.count())
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertEquals(1, it.supportFragmentManager.backStackEntryCount)
+        }
+    }
+
+    @Test
+    fun anOwnerlessNavigationControllerIsNotQueuedWhileTheActivityIsStopped() {
+        val activity = launchedActivity()
+        val ownerless = UINavigationController()
+        val first = pushedController(activity)
+        val second = pushedController(activity)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain {
+            ownerless.pushViewController(first, false)
+            ownerless.pushViewController(second, false)
+        }
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertEquals(1, it.supportFragmentManager.backStackEntryCount)
+        }
     }
 
     private fun showTabs(activity: TestStoryboard): TestTabBarController {
