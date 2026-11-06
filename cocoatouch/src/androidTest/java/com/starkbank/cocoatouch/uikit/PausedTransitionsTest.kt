@@ -12,6 +12,7 @@ import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -193,6 +194,31 @@ class PausedTransitionsTest {
             it.supportFragmentManager.executePendingTransactions()
             assertTrue(modal.view!!.fragment()!!.isAdded)
             assertEquals(1, it.supportFragmentManager.backStackEntryCount)
+        }
+    }
+
+    @Test
+    fun popRightAfterSuperOnStopIsAppliedOnRestart() {
+        val activity = launchedActivity()
+        pushAndSettle(activity, 1)
+        var calls = 0
+        var failure: Throwable? = null
+        activity.afterStop = {
+            calls++
+            try {
+                navigation(activity).popViewController(false)
+            } catch (error: Throwable) {
+                failure = error
+            }
+        }
+        scenario.moveToState(Lifecycle.State.CREATED)
+        assertEquals(1, calls)
+        assertNull(failure)
+        assertEquals(1, navigation(activity).viewControllers.size)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity {
+            it.supportFragmentManager.executePendingTransactions()
+            assertEquals(0, it.supportFragmentManager.backStackEntryCount)
         }
     }
 

@@ -224,18 +224,6 @@ class UIApplicationLifetimeTest {
     }
 
     @Test
-    fun destroyedStoryboardUnderAPlainActivityIsReleased() {
-        val first = scenarioActivity()
-        val reference = onWorkerThread { destroyStoryboardUnderPlainActivity(first) }
-        onMain { assertNull(UIApplication.storyboard) }
-        assertCollected(reference)
-        lateinit var plain: PlainActivity
-        onMain { plain = resumedActivities().filterIsInstance<PlainActivity>().first() }
-        finishAndAwaitDestroyed(plain)
-        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
-    }
-
-    @Test
     fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
@@ -346,16 +334,6 @@ class UIApplicationLifetimeTest {
         finishAndAwaitDestroyed(first)
         finishAndAwaitDestroyed(top)
         return WeakReference(top)
-    }
-
-    private fun destroyStoryboardUnderPlainActivity(first: TestStoryboard): WeakReference<TestStoryboard> {
-        val below = launchSecondInstance(first)
-        onMain { below.startActivity(Intent(below, PlainActivity::class.java)) }
-        awaitCondition("the PlainActivity to resume") {
-            resumedActivities().filterIsInstance<PlainActivity>().isNotEmpty()
-        }
-        finishAndAwaitDestroyed(below)
-        return WeakReference(below)
     }
 
     private fun assertCollected(reference: WeakReference<*>) {

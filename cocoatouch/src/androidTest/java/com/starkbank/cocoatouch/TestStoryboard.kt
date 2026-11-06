@@ -19,6 +19,14 @@ class TestStoryboard : UIStoryboard() {
         launchEvents.add("prepareLaunch")
     }
 
+    // Runs right after super.onStop(), where the fragment manager is already stopped but onSaveInstanceState has not run
+    var afterStop: (() -> Unit)? = null
+
+    override fun onStop() {
+        super.onStop()
+        afterStop?.invoke()
+    }
+
     fun navigation(): UINavigationController {
         return navigationController
     }

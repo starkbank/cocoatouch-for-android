@@ -40,6 +40,8 @@ android {
         }
     }
     testOptions {
+        // Below 28 the system saves the state before onStop, a different order from the one the consuming apps get
+        targetSdk 36
         // UIColor's default argument calls Color.parseColor, which throws in the android.jar stub
         unitTests.returnDefaultValues = true
     }

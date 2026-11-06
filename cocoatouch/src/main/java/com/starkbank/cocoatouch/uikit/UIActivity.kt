@@ -157,8 +157,9 @@ open class UIActivity: AppCompatActivity() {
     }
 
     private fun startPausedTransitions() {
-        this.navigationController.pausedViewControllers = NSMutableArray<UIViewController>()
-        this.navigationController.pausedTransactions = mutableListOf()
+        this.navigationController.pausedViewControllers = this.navigationController.pausedViewControllers
+            ?: NSMutableArray<UIViewController>()
+        this.navigationController.pausedTransactions = this.navigationController.pausedTransactions ?: mutableListOf()
     }
 
     private fun finishPausedTransitions() {

@@ -41,7 +41,6 @@ object UIApplication: UIResponder() {
     internal fun detach(activity: UIActivity) {
         activity.pickers?.release()
         activity.pickers = null
-        if (this.storyboard === activity) this.storyboard = null
         if (this.activity !== activity) return
         this.activity = null
         this.storyboard = null

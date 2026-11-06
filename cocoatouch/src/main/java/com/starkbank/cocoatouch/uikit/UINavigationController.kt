@@ -123,7 +123,7 @@ open class UINavigationController: UIViewController() {
         this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
         // The drain replays without animation, as the old drain forced animated = false
-        val animates = animated && this.pausedTransactions == null
+        val animates = animated && pausedQueue() == null
         transact { commitModal(viewController, animates, addsToBackStack) }
     }
 
@@ -147,7 +147,7 @@ open class UINavigationController: UIViewController() {
     internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
         this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
-        val animates = animated && this.pausedTransactions == null
+        val animates = animated && pausedQueue() == null
         transact { commitPush(viewController, animates, addsToBackStack) }
     }
 
@@ -234,9 +234,18 @@ open class UINavigationController: UIViewController() {
         }
     }
 
+    // FragmentActivity.onStop stops the fragment manager before onSaveInstanceState creates the queue (API 28+),
+    // so a saved fragment manager opens the queue itself
+    private fun pausedQueue(): MutableList<() -> Unit>? {
+        val queue = this.pausedTransactions
+        if (queue != null) return queue
+        if (ownerActivity()?.supportFragmentManager?.isStateSaved != true) return null
+        return mutableListOf<() -> Unit>().also { this.pausedTransactions = it }
+    }
+
     // When the state is saved a fragment transaction throws, so it waits, in order, for the restart
     private fun transact(block: () -> Unit) {
-        val queue = this.pausedTransactions
+        val queue = pausedQueue()
         if (queue == null) {
             block()
             return
