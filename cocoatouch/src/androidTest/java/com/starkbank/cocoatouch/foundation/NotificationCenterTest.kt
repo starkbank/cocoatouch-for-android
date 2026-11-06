@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.onMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -61,6 +62,29 @@ class NotificationCenterTest {
         poster.join()
         waitForMain()
         assertTrue(onMain)
+        NotificationCenter.removeObserver(token)
+    }
+
+    @Test
+    fun anObserverRemovedWhileAPostIsPendingIsNotCalled() {
+        val token = NotificationCenter.addObserver({ xCalls++ }, "a")
+        onMain {
+            NotificationCenter.postNotification("a")
+            NotificationCenter.removeObserver(token)
+        }
+        waitForMain()
+        assertEquals(0, xCalls)
+    }
+
+    @Test
+    fun anObserverAddedWhileAPostIsPendingIsCalled() {
+        lateinit var token: NotificationObserver
+        onMain {
+            NotificationCenter.postNotification("a")
+            token = NotificationCenter.addObserver({ xCalls++ }, "a")
+        }
+        waitForMain()
+        assertEquals(1, xCalls)
         NotificationCenter.removeObserver(token)
     }
 

@@ -51,7 +51,7 @@ First release on Maven Central; every interface the library ships:
 - Library resources prefixed with `cocoatouch_`, including `@id/cocoatouch_tab_container` for tab layouts
 
 ### Changed
-- `UIImagePickerController` keeps only the latest camera capture in `cacheDir`: a new capture deletes the previous file and a cancelled one is deleted; the files no longer rely on `deleteOnExit`, which never runs on Android.
+- `UIImagePickerController` keeps only the latest camera capture in `cacheDir`: a new capture deletes every earlier `tmp_image_file*.jpeg` there, even one written by a previous activity instance, and a cancelled one is deleted; the files no longer rely on `deleteOnExit`, which never runs on Android.
 - The delegates of `UISearchBar`, `UITabBar` and `UITabBarController` are held strongly, so an inline delegate object stays alive; the `UIButton` tint and `UISearchBar.barTintColor` read `UIApplication.appearance` when used, not at construction.
 - `NotificationCenter` delivers to its observers directly on the main thread and no longer uses `LocalBroadcastManager`, which is not a dependency anymore; a receiver the app registered with `LocalBroadcastManager` for a notification name no longer fires.
 Compared with 0.0.1, the only public predecessor:
@@ -85,7 +85,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 - CT-04: `textFieldShouldChange` returns `Unit`, so a delegate cannot veto an edit (`ct04ShouldChangeCannotVeto`).
 - CT-07: `tableViewWillDisplayForRowAt` fires only for the last visible row, so earlier rows are skipped (`ct07WillDisplaySkipsRowsBeforeTheLastVisible`).
 - CT-12: `UIView.tag` is a `String`, where UIKit has an `Int` (`ct12TagIsAStringNotAnInt`).
-- CT-16: after the activity is recreated, the navigation controller holds only the initial controller and the fragments restored by the system are removed, so nothing piles up across recreations (`ct16RecreateKeepsOnlyTheInitialController`).
+- CT-16: after the activity is recreated, the navigation controller holds only the initial controller and the `UIFragment`s restored by the system are removed, along with the activity's back stack, which the library owns for pushes, so nothing piles up across recreations; a fragment of the app's own is left alone (`ct16RecreateKeepsOnlyTheInitialController`).
 - CT-17: `UIProgressView` and `UIScrollView` declare no members (`ct17ProgressViewAndScrollViewDeclareNoMembers`).
 - The default `UIViewController` title is `javaClass.simpleName`, which the consumer's R8 obfuscates when the app does not set `title`.
 - `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `commitModal`: at the call while the activity is resumed, and at the restart when the call was queued while its state was saved (`presentingAStoryboardLessControllerWhilePausedThrowsOnRestart`).
@@ -95,7 +95,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 
 ### Differences from the in-house framework this release was extracted from
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
-- The application context is set before `Application.onCreate` by `CocoaTouchInitializer`, run by androidx.startup's `InitializationProvider` (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, add `<meta-data android:name="com.starkbank.cocoatouch.CocoaTouchInitializer" tools:node="remove" />` inside the provider element.
+- The application context is set before `Application.onCreate` by `CocoaTouchInitializer`, run by androidx.startup's `InitializationProvider` (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, add `<meta-data android:name="com.starkbank.cocoatouch.CocoaTouchInitializer" tools:node="remove" />` inside the provider element.
 - `UIFragment`, `UIKeyInput`, `BackPressedParser`, `IBActionParser.parse`/`IBOutletParser.parse`, `Transition`, `NoneTransition`, `UIViewHolder` and `UIApplication.isNotificationsEnabled` are behind `@InternalCocoaTouchApi` (ERROR level), so using them needs an opt-in.
 - `UIApplication` attaches in `onCreate`, re-attaches in `onStart`, in `onResume` and when the activity becomes the top resumed one (API 29+ multi-window), and releases on destroy.
 - `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are created once per activity and released when it is destroyed; a picker kept from a destroyed activity throws on `present()`.

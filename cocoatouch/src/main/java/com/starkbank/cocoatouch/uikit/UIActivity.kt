@@ -77,7 +77,7 @@ open class UIActivity: AppCompatActivity() {
         supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         val transaction = supportFragmentManager.beginTransaction()
         for (fragment in supportFragmentManager.fragments) {
-            transaction.remove(fragment)
+            if (fragment is UIFragment) transaction.remove(fragment)
         }
         transaction.commitNow()
     }

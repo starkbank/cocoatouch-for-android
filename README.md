@@ -234,9 +234,21 @@ Requirements of the consuming app:
 - `compileSdk` 35 or higher (androidx.core 1.15.0 declares minCompileSdk 35).
 - Kotlin 2.1 or higher (the artifact's kotlin-stdlib is 2.2.21, and a compiler reads metadata at most one minor version ahead).
 - `android.nonFinalResIds=false` in `gradle.properties`, so `@IBOutlet(R.id.x)` accepts the ids.
-- `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider. The capture is written to `cacheDir`; the library keeps only the latest and deletes a cancelled one, so copy the file if the app needs it beyond the next capture.
+- `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider. The capture is written to `cacheDir`; the library keeps only the latest, deleting every earlier capture, and deletes a cancelled one, so copy the file if the app needs it beyond the next capture.
 - `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.
-- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults`, `NotificationCenter` and `UIPasteboard`, exists before `Application.onCreate` because the library initialises itself through androidx.startup's `InitializationProvider`, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, add `<meta-data android:name="com.starkbank.cocoatouch.CocoaTouchInitializer" tools:node="remove" />` inside the provider element.
+- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults` and `UIPasteboard`, exists before `Application.onCreate` because the library initialises itself through androidx.startup's `InitializationProvider`, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, declare the provider in the app's manifest with the entry removed:
+
+```xml
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <meta-data
+        android:name="com.starkbank.cocoatouch.CocoaTouchInitializer"
+        tools:node="remove" />
+</provider>
+```
 - A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
 - `android:configChanges="uiMode"` on the `UIStoryboard` activity, so a dark-mode switch updates `UITraitCollection` without recreating the activity (recreation resets navigation, see CT-16).
 - Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
