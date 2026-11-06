@@ -3,10 +3,10 @@ package com.starkbank.cocoatouch.uikit
 import androidx.fragment.app.FragmentManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.RecordingViewController
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.navigation
+import com.starkbank.cocoatouch.onMain
 import com.starkbank.cocoatouch.rootController
 import com.starkbank.cocoatouch.test.R
 import org.junit.After
@@ -18,7 +18,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class UINavigationControllerKnownGapTest {
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var scenario: ActivityScenario<TestStoryboard>
     private lateinit var storyboard: UIStoryboard
     private lateinit var navigation: UINavigationController
@@ -53,17 +52,5 @@ class UINavigationControllerKnownGapTest {
             fragmentManager.executePendingTransactions()
             assertEquals(2, root.events.count { it == "viewDidLoad" })
         }
-    }
-
-    private fun onMain(block: () -> Unit) {
-        var failure: Throwable? = null
-        instrumentation.runOnMainSync {
-            try {
-                block()
-            } catch (error: Throwable) {
-                failure = error
-            }
-        }
-        failure?.let { throw it }
     }
 }

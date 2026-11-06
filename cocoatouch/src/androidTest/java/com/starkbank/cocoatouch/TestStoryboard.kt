@@ -1,5 +1,6 @@
 package com.starkbank.cocoatouch
 
+import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.test.R
 import com.starkbank.cocoatouch.uikit.UIActivity
 import com.starkbank.cocoatouch.uikit.UIFragment
@@ -52,4 +53,17 @@ fun storyboard(activity: UIActivity): UIStoryboard {
 
 fun rootController(activity: UIActivity): RecordingViewController {
     return (activity.supportFragmentManager.fragments.first() as UIFragment).viewController as RecordingViewController
+}
+
+// An assertion that fails on the main thread would crash the process instead of failing the test
+fun onMain(block: () -> Unit) {
+    var failure: Throwable? = null
+    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+        try {
+            block()
+        } catch (error: Throwable) {
+            failure = error
+        }
+    }
+    failure?.let { throw it }
 }

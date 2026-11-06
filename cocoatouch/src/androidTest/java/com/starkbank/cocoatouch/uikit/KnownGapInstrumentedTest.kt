@@ -8,6 +8,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.onMain
 import com.starkbank.cocoatouch.foundation.NSIndexPath
 import com.starkbank.cocoatouch.navigation
 import com.starkbank.cocoatouch.storyboard
@@ -102,17 +103,5 @@ class KnownGapInstrumentedTest {
     // The modal presentation reads the controller's storyboard, which only storyboard-made controllers have
     private fun pushed(activity: UIActivity): UIViewController {
         return storyboard(activity).instantiateViewControllerWithIdentifier(R.layout.cocoatouch_test_pushed)
-    }
-
-    private fun onMain(block: () -> Unit) {
-        var failure: Throwable? = null
-        instrumentation.runOnMainSync {
-            try {
-                block()
-            } catch (error: Throwable) {
-                failure = error
-            }
-        }
-        failure?.let { throw it }
     }
 }

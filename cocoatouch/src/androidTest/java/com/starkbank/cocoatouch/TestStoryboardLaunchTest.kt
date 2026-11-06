@@ -3,7 +3,6 @@ package com.starkbank.cocoatouch
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.starkbank.cocoatouch.uikit.UIApplication
-import com.starkbank.cocoatouch.uikit.UIFragment
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,7 +31,7 @@ class TestStoryboardLaunchTest {
     fun launchesInitialViewControllerOnce() {
         scenario.onActivity { activity ->
             assertSame(activity, UIApplication.activity())
-            val root = (activity.supportFragmentManager.fragments.first() as UIFragment).viewController as RecordingViewController
+            val root = rootController(activity)
             assertEquals(1, root.events.count { it == "viewDidLoad" })
         }
     }
@@ -41,7 +40,7 @@ class TestStoryboardLaunchTest {
     fun rootInterceptsBackWhenItIsTheOnlyController() {
         scenario.onActivity { activity ->
             activity.onBackPressedDispatcher.onBackPressed()
-            val root = (activity.supportFragmentManager.fragments.first() as UIFragment).viewController as RecordingViewController
+            val root = rootController(activity)
             assertEquals(1, root.events.count { it == "back" })
             assertFalse(activity.isFinishing)
         }

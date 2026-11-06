@@ -5,8 +5,8 @@ import android.widget.EditText
 import androidx.core.widget.addTextChangedListener
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.onMain
 import java.lang.ref.WeakReference
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -44,7 +44,6 @@ class UITextFieldContractTest {
         }
     }
 
-    private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var scenario: ActivityScenario<TestStoryboard>
     private lateinit var field: UITextField
     private lateinit var editText: EditText
@@ -172,18 +171,5 @@ class UITextFieldContractTest {
             }
         }
         assertNull(weak!!.get())
-    }
-
-    // An assertion that fails on the main thread would crash the process instead of failing the test
-    private fun onMain(block: () -> Unit) {
-        var failure: Throwable? = null
-        instrumentation.runOnMainSync {
-            try {
-                block()
-            } catch (error: Throwable) {
-                failure = error
-            }
-        }
-        failure?.let { throw it }
     }
 }
