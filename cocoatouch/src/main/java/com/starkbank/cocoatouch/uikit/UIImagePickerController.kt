@@ -41,6 +41,7 @@ class UIImagePickerController internal constructor(activity: UIActivity) {
     private var takePictureFromCameraResult: ActivityResultLauncher<Uri>?
     private var permissionRequestResult: ActivityResultLauncher<String>?
     private var latestTmpUri: Uri? = null
+    private var latestTmpFile: File? = null
     private var released = false
 
     var delegate: UIImagePickerControllerDelegate? = null
@@ -56,10 +57,14 @@ class UIImagePickerController internal constructor(activity: UIActivity) {
 
         takePictureFromCameraResult =
             activity.registerForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess: Boolean ->
-                if (isSuccess) {
-                    latestTmpUri?.let { uri ->
-                        encodeAndSendImage(uri)
-                    }
+                if (!isSuccess) {
+                    discardCapture(latestTmpFile)
+                    latestTmpFile = null
+                    latestTmpUri = null
+                    return@registerForActivityResult
+                }
+                latestTmpUri?.let { uri ->
+                    encodeAndSendImage(uri)
                 }
             }
 
@@ -107,10 +112,12 @@ class UIImagePickerController internal constructor(activity: UIActivity) {
             permissionRequestResult?.launch(Manifest.permission.CAMERA)
             return
         }
-        getTmpFileUri().let { uri ->
-            latestTmpUri = uri
-            takePictureFromCameraResult?.launch(uri)
-        }
+        val context = UIApplication.applicationContext!!
+        val file = captureFile(context, latestTmpFile)
+        val uri = tmpFileUri(context, file)
+        latestTmpFile = file
+        latestTmpUri = uri
+        takePictureFromCameraResult?.launch(uri)
     }
 
     private fun encodeAndSendImage(uri: Uri) {
@@ -122,25 +129,26 @@ class UIImagePickerController internal constructor(activity: UIActivity) {
         )
     }
 
-    private fun getTmpFileUri(): Uri {
-        return tmpFileUri(UIApplication.applicationContext!!)
-    }
-
 }
 
 internal fun fileProviderAuthority(context: Context): String {
     return "${context.packageName}.provider"
 }
 
-internal fun tmpFileUri(context: Context): Uri {
-    val tmpFile = File.createTempFile("tmp_image_file", ".jpeg", context.cacheDir).apply {
-        createNewFile()
-        deleteOnExit()
-    }
+// Captures are often identity documents and deleteOnExit never runs on Android, so only the latest file is kept
+internal fun captureFile(context: Context, previous: File?): File {
+    discardCapture(previous)
+    return File.createTempFile("tmp_image_file", ".jpeg", context.cacheDir)
+}
 
+internal fun discardCapture(file: File?) {
+    file?.delete()
+}
+
+internal fun tmpFileUri(context: Context, file: File): Uri {
     return FileProvider.getUriForFile(
         context,
         fileProviderAuthority(context),
-        tmpFile
+        file
     )
 }

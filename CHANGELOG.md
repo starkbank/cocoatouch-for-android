@@ -51,6 +51,7 @@ First release on Maven Central; every interface the library ships:
 - Library resources prefixed with `cocoatouch_`, including `@id/cocoatouch_tab_container` for tab layouts
 
 ### Changed
+- `UIImagePickerController` keeps only the latest camera capture in `cacheDir`: a new capture deletes the previous file and a cancelled one is deleted; the files no longer rely on `deleteOnExit`, which never runs on Android.
 - The delegates of `UISearchBar`, `UITabBar` and `UITabBarController` are held strongly, so an inline delegate object stays alive; the `UIButton` tint and `UISearchBar.barTintColor` read `UIApplication.appearance` when used, not at construction.
 - `NotificationCenter` delivers to its observers directly on the main thread and no longer uses `LocalBroadcastManager`, which is not a dependency anymore; a receiver the app registered with `LocalBroadcastManager` for a notification name no longer fires.
 Compared with 0.0.1, the only public predecessor:
