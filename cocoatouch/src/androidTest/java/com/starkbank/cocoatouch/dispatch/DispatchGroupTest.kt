@@ -76,12 +76,16 @@ class DispatchGroupTest {
 
     @Test
     fun blockRunsOnceAcrossCycles() {
+        val first = CountDownLatch(1)
         group.enter()
+        group.notify(DispatchQueue.main) { runs.incrementAndGet(); first.countDown() }
         group.leave()
+        assertTrue(first.await(1, SECONDS))
+        val second = CountDownLatch(1)
         group.enter()
-        group.notify(DispatchQueue.main) { runs.incrementAndGet(); latch.countDown() }
+        group.notify(DispatchQueue.main) { second.countDown() }
         group.leave()
-        assertTrue(latch.await(1, SECONDS))
+        assertTrue(second.await(1, SECONDS))
         Thread.sleep(200)
         assertEquals(1, runs.get())
     }
