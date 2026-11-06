@@ -85,7 +85,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 - CT-04: `textFieldShouldChange` returns `Unit`, so a delegate cannot veto an edit (`ct04ShouldChangeCannotVeto`).
 - CT-07: `tableViewWillDisplayForRowAt` fires only for the last visible row, so earlier rows are skipped (`ct07WillDisplaySkipsRowsBeforeTheLastVisible`).
 - CT-12: `UIView.tag` is a `String`, where UIKit has an `Int` (`ct12TagIsAStringNotAnInt`).
-- CT-16: after the activity is recreated, the navigation controller holds only the initial controller (`ct16RecreateKeepsOnlyTheInitialController`).
+- CT-16: after the activity is recreated, the navigation controller holds only the initial controller and the fragments restored by the system are removed, so nothing piles up across recreations (`ct16RecreateKeepsOnlyTheInitialController`).
 - CT-17: `UIProgressView` and `UIScrollView` declare no members (`ct17ProgressViewAndScrollViewDeclareNoMembers`).
 - The default `UIViewController` title is `javaClass.simpleName`, which the consumer's R8 obfuscates when the app does not set `title`.
 - `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `commitModal`: at the call while the activity is resumed, and at the restart when the call was queued while its state was saved (`presentingAStoryboardLessControllerWhilePausedThrowsOnRestart`).

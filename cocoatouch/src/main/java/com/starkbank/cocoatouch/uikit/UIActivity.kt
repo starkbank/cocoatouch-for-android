@@ -3,6 +3,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import com.starkbank.cocoatouch.compatibility.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import java.lang.ref.WeakReference
@@ -60,6 +61,7 @@ open class UIActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareLaunch()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) dropRestoredFragments()
         UITraitCollection.current = UITraitCollection.from(resources.configuration.uiMode)
         setContentView(storyboardId())
         UIApplication.attach(this)
@@ -67,6 +69,17 @@ open class UIActivity: AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { dispatchBackPressed() }
         })
+    }
+
+    // The navigation stack is rebuilt from the initial controller (CT-16), so the restored fragments would be blank
+    // views under the new root
+    private fun dropRestoredFragments() {
+        supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        val transaction = supportFragmentManager.beginTransaction()
+        for (fragment in supportFragmentManager.fragments) {
+            transaction.remove(fragment)
+        }
+        transaction.commitNow()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

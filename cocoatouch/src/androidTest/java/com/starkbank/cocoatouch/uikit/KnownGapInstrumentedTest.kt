@@ -116,7 +116,11 @@ class KnownGapInstrumentedTest {
     fun ct16RecreateKeepsOnlyTheInitialController() {
         scenario.onActivity { navigation(it).pushViewController(pushed(it), false) }
         scenario.recreate()
-        scenario.onActivity { assertEquals(1, navigation(it).viewControllers.size) }
+        scenario.onActivity {
+            assertEquals(1, navigation(it).viewControllers.size)
+            assertEquals(1, it.supportFragmentManager.fragments.size)
+            assertEquals(0, it.supportFragmentManager.backStackEntryCount)
+        }
     }
 
     // The modal presentation reads the controller's storyboard, which only storyboard-made controllers have
