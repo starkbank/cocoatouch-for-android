@@ -224,6 +224,21 @@ class UIApplicationLifetimeTest {
     }
 
     @Test
+    fun plainActivityKeepsTheFinishedStoryboardBelowIt() {
+        val first = scenarioActivity()
+        onMain { first.startActivity(Intent(first, PlainActivity::class.java)) }
+        lateinit var plain: PlainActivity
+        awaitCondition("the PlainActivity to resume") {
+            val resumed = resumedActivities().filterIsInstance<PlainActivity>().firstOrNull() ?: return@awaitCondition false
+            plain = resumed
+            true
+        }
+        finishAndAwaitDestroyed(first)
+        onMain { assertSame(first, UIApplication.storyboard) }
+        finishAndAwaitDestroyed(plain)
+    }
+
+    @Test
     fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)

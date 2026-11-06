@@ -27,6 +27,17 @@ class TestStoryboard : UIStoryboard() {
         afterStop?.invoke()
     }
 
+    // Lets a test observe a failure of the queued transactions replayed by onStart without crashing the process
+    var startFailure: Throwable? = null
+
+    override fun onStart() {
+        try {
+            super.onStart()
+        } catch (error: Throwable) {
+            startFailure = error
+        }
+    }
+
     fun navigation(): UINavigationController {
         return navigationController
     }

@@ -3,6 +3,7 @@ package com.starkbank.cocoatouch.uikit
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.TestTabBarController
 import com.starkbank.cocoatouch.navigation
@@ -220,6 +221,18 @@ class PausedTransitionsTest {
             it.supportFragmentManager.executePendingTransactions()
             assertEquals(0, it.supportFragmentManager.backStackEntryCount)
         }
+    }
+
+    @Test
+    fun presentingAStoryboardLessControllerWhilePausedThrowsOnRestart() {
+        val activity = launchedActivity()
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).presentViewController(PushedViewController(), false) }
+        assertNull(activity.startFailure)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        val failure = activity.startFailure
+        assertTrue(failure is NullPointerException)
+        assertTrue(failure!!.stackTrace.any { it.methodName == "commitModal" })
     }
 
     private fun showTabs(activity: TestStoryboard): TestTabBarController {
