@@ -124,7 +124,7 @@ gradle.taskGraph.whenReady { graph ->
 }
 
 def cleanCentralBundle = tasks.register('cleanCentralBundle', Delete) {
-    delete layout.buildDirectory.dir('central-bundle')
+    delete layout.buildDirectory.dir('central-bundle'), layout.buildDirectory.file('distributions/central-bundle.zip')
 }
 
 tasks.withType(PublishToMavenRepository).configureEach {
