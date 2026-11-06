@@ -36,6 +36,7 @@ class NotificationCenter {
             LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(observer.receiver)
         }
 
+        @JvmSynthetic
         @Deprecated(
             "Remove the observer you added with the token addObserver returned",
             level = DeprecationLevel.ERROR

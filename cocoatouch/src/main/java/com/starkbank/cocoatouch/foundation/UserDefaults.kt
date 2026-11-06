@@ -33,7 +33,7 @@ class UserDefaults {
 
     fun set(bool: Boolean?, key: String) {
         val editor = editor(key)
-        editor.putBoolean(key, bool!!)
+        bool?.let { editor.putBoolean(key, it) } ?: editor.remove(key)
         editor.apply()
     }
 
