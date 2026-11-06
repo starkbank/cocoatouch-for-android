@@ -1,7 +1,8 @@
 package com.starkbank.cocoatouch.uikit
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.ProviderInfo
-import android.view.ContextThemeWrapper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.CocoaTouchInitializer
@@ -29,7 +30,11 @@ class UIApplicationInitializationTest {
             CocoaTouchInitializer().attachInfo(context, ProviderInfo())
             assertSame(context.applicationContext, UIApplication.applicationContext)
 
-            UIApplication.initialize(ContextThemeWrapper(context, 0))
+            UIApplication.initialize(
+                object : ContextWrapper(context) {
+                    override fun getApplicationContext(): Context = this
+                }
+            )
             assertSame(context.applicationContext, UIApplication.applicationContext)
         } finally {
             UIApplication.applicationContext = saved

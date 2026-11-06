@@ -50,6 +50,16 @@ class NullableChild : NullableBase() {
     @IBOutlet(2) override var label: UILabel? = null
 }
 
+open class InternalBase : UIViewController() {
+
+    @IBOutlet(1) internal open var label: UILabel? = null
+}
+
+class InternalChild : InternalBase() {
+
+    @IBOutlet(2) override var label: UILabel? = null
+}
+
 class IBOutletParserTest {
 
     @Test
@@ -81,6 +91,13 @@ class IBOutletParserTest {
         val labels = IBOutletParser.outletFields(NullableChild::class.java).filter { it.name == "label" }
         assertEquals(1, labels.size)
         assertEquals(NullableChild::class.java, labels.first().declaringClass)
+    }
+
+    @Test
+    fun anOverriddenInternalPropertyIsBoundOnlyOnTheSubclass() {
+        val labels = IBOutletParser.outletFields(InternalChild::class.java).filter { it.name == "label" }
+        assertEquals(1, labels.size)
+        assertEquals(InternalChild::class.java, labels.first().declaringClass)
     }
 
     @Test

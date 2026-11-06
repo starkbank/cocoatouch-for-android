@@ -45,7 +45,9 @@ object IBOutletParser {
     private fun isOwnedByItsClass(field: Field): Boolean {
         if (!Modifier.isPrivate(field.modifiers)) return false
         val getterName = "get" + field.name.replaceFirstChar { it.uppercase() }
-        return field.declaringClass.declaredMethods.none { it.name == getterName && !Modifier.isPrivate(it.modifiers) }
+        return field.declaringClass.declaredMethods.none {
+            !Modifier.isPrivate(it.modifiers) && (it.name == getterName || it.name.startsWith("$getterName$"))
+        }
     }
 
     private fun parse(field: Field, controller: UIResponder) {

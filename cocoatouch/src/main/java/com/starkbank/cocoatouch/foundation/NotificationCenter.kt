@@ -14,6 +14,7 @@ class NotificationCenter {
 
     companion object {
 
+        // Observers may be added or removed from any thread (copy-on-write list, synchronized LocalBroadcastManager); selectors always run on the main thread
         private val observers = CopyOnWriteArrayList<NotificationObserver>()
 
         fun addObserver(selector: () -> Unit, name: String): NotificationObserver {
