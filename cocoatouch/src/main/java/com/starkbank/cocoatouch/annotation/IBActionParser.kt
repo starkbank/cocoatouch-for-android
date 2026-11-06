@@ -4,9 +4,12 @@ import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
 
 
 object IBActionParser {
+
+    private val methodsByType = ConcurrentHashMap<Class<*>, List<Method>>()
 
     fun parse(controller: UIResponder) {
         for (method in actionMethods(controller.javaClass)) {
@@ -14,14 +17,19 @@ object IBActionParser {
         }
     }
 
-    // Walks up to UIResponder so a base controller's actions are bound; a subclass method hides the parent's
-    // one with the same name and parameters
     internal fun actionMethods(type: Class<*>): List<Method> {
+        return methodsByType.computeIfAbsent(type) { walk(it) }
+    }
+
+    // Walks up to UIResponder so a base controller's actions are bound; a subclass method hides the parent's
+    // one with the same name and parameters. The result is constant per class, so it is built once
+    private fun walk(type: Class<*>): List<Method> {
         val methodsBySignature = LinkedHashMap<Pair<String, List<Class<*>>>, Method>()
         var current: Class<*>? = type
         while (current != null && current != UIResponder::class.java) {
             for (method in current.declaredMethods) {
                 if (!method.isAnnotationPresent(IBAction::class.java)) continue
+                method.isAccessible = true
                 methodsBySignature.putIfAbsent(Pair(method.name, method.parameterTypes.toList()), method)
             }
             current = current.superclass

@@ -71,4 +71,13 @@ class IBActionParserInstrumentedTest {
             assertTrue(error.message!!.contains("missing"))
         }
     }
+
+    @Test
+    fun outletBoundBeforeTheViewExistsSaysSo() {
+        onMain {
+            val error = assertThrows(IllegalStateException::class.java) { IBOutletParser.parse(MissingOutletFixture()) }
+            assertTrue(error.message!!.contains("before"))
+            assertTrue(error.message!!.contains("missing"))
+        }
+    }
 }
