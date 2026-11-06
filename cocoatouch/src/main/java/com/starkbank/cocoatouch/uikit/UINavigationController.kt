@@ -5,6 +5,7 @@ import com.starkbank.cocoatouch.foundation.NSArray
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.uikit.UIApplication.sharedApplication
 import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
+import java.lang.ref.WeakReference
 
 
 open class UINavigationController: UIViewController() {
@@ -22,9 +23,11 @@ open class UINavigationController: UIViewController() {
     internal var modalViewControllers = NSMutableArray<UIViewController>()
     @InternalCocoaTouchApi
     var pausedViewControllers: NSMutableArray<UIViewController>? = null
+    internal var pausedTransactions: MutableList<() -> Unit>? = null
+    internal var owner: WeakReference<UIActivity>? = null
 
     open fun pushViewController(viewController: UIViewController, animated: Boolean) {
-        if (UIApplication.activity == null) return
+        if (ownerActivity() == null) return
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         viewController.navigationController = this
         viewController.setPresentingViewController(null)
@@ -34,7 +37,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun presentViewController(viewController: UIViewController, animated: Boolean) {
-        if (UIApplication.activity == null) return
+        if (ownerActivity() == null) return
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         viewController.navigationController = this
         viewController.setPresentingViewController(null)
@@ -44,7 +47,7 @@ open class UINavigationController: UIViewController() {
     }
 
     fun setViewControllers(viewControllers: NSMutableArray<UIViewController>, animated: Boolean) {
-        if (UIApplication.activity == null) return
+        if (ownerActivity() == null) return
         this.pushViewControllers = NSMutableArray()
         val presentedViewController: UIViewController? = lastViewController(this.pushViewControllers)
         for (viewController in viewControllers) {
@@ -62,7 +65,7 @@ open class UINavigationController: UIViewController() {
     open fun popViewController(animated: Boolean) {
         val tabs = lastViewController(this.pushViewControllers) as? UITabBarController
         if (tabs?.popInTab(animated, null) == true) return
-        if (UIApplication.activity == null) return
+        if (ownerActivity() == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -73,8 +76,7 @@ open class UINavigationController: UIViewController() {
         }
         this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
-        val activity = sharedApplication().activity()
-        activity.supportFragmentManager.popBackStack()
+        transactOnOwner { it.popBackStack() }
 
         val lastViewController = this.pushViewControllers.lastObject()
         if(lastViewController is UITabBarController) {
@@ -87,7 +89,7 @@ open class UINavigationController: UIViewController() {
     }
 
     open fun popToRootViewController(animated: Boolean) {
-        if (UIApplication.activity == null) return
+        if (ownerActivity() == null) return
         //
         // Applications is in foreground because this action was trigged by user.
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
@@ -97,11 +99,7 @@ open class UINavigationController: UIViewController() {
         for (i in lastIndex downTo 1) {
             this.pushViewControllers.removeObjectAtIndex(i)
         }
-        val activity = sharedApplication().activity()
-        activity.supportFragmentManager.popBackStack(
-            null,
-            FragmentManager.POP_BACK_STACK_INCLUSIVE
-        )
+        transactOnOwner { it.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE) }
 
         this.pushViewControllers.lastObject()?.viewWillAppear(animated)
     }
@@ -109,8 +107,7 @@ open class UINavigationController: UIViewController() {
 
 
     internal fun presentModalViewController(viewController: UIViewController, animated: Boolean) {
-        if (UIApplication.activity == null) return
-        val activity = sharedApplication().activity()
+        val activity = ownerActivity() ?: return
         //
         // Don' let push items to fragment when activity is finishing or destroyed
         //
@@ -123,14 +120,43 @@ open class UINavigationController: UIViewController() {
         //
         sharedApplication().isNotificationsEnabled = true
 
+        // The drain replays without animation, as the old drain forced animated = false
+        // Evaluated first: it opens the queue and the paused list that the next line fills
+        val isQueued = pausedQueue() != null
+        val animates = animated && !isQueued
+        this.pausedViewControllers?.addObject(viewController)
+        val addsToBackStack = pushViewControllers.count() > 1
+        transact { commitModal(viewController, animates, addsToBackStack) }
+    }
+
+    open fun dismissModalViewControllerAnimated(animated: Boolean) {
+        if (ownerActivity() == null) return
         //
-        // When Activity is paused, you can not perform this
+        // Applications is in foreground because this action was trigged by user.
+        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
         //
-        if (this.pausedViewControllers != null) {
-            this.pausedViewControllers?.addObject(viewController)
+        sharedApplication().isNotificationsEnabled = true
+        if (this.pushViewControllers.count() == 1) {
             return
         }
+        this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
+        transactOnOwner { it.popBackStack() }
+
+        this.pushViewControllers.lastObject()?.viewWillAppear(animated)
+    }
+
+    internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
+        // Evaluated first: it opens the queue and the paused list that the next line fills
+        val isQueued = pausedQueue() != null
+        val animates = animated && !isQueued
+        this.pausedViewControllers?.addObject(viewController)
+        val addsToBackStack = pushViewControllers.count() > 1
+        transact { commitPush(viewController, animates, addsToBackStack) }
+    }
+
+    private fun commitModal(viewController: UIViewController, animated: Boolean, addsToBackStack: Boolean) {
+        val activity = ownerActivity() ?: return
         val storyboard = viewController.storyboard!!
         val fragment = viewController.view!!.fragment()!!
 
@@ -149,42 +175,15 @@ open class UINavigationController: UIViewController() {
             fragmentTransaction.add(storyboard.containerId(), fragment)
         }
 
-        if (pushViewControllers.count() > 1) {
+        if (addsToBackStack) {
             fragmentTransaction.addToBackStack(viewController.javaClass.name)
         }
 
         fragmentTransaction.commitAllowingStateLoss()
     }
 
-    open fun dismissModalViewControllerAnimated(animated: Boolean) {
-        if (UIApplication.activity == null) return
-        //
-        // Applications is in foreground because this action was trigged by user.
-        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
-        //
-        sharedApplication().isNotificationsEnabled = true
-        if (this.pushViewControllers.count() == 1) {
-            return
-        }
-        this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
-
-        val activity = sharedApplication().activity()
-        activity.supportFragmentManager.popBackStack()
-
-        this.pushViewControllers.lastObject()?.viewWillAppear(animated)
-    }
-
-    internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
-        //
-        // When Activity is paused, you can not perform this
-        //
-        if (this.pausedViewControllers != null) {
-            this.pausedViewControllers?.addObject(viewController)
-            return
-        }
-
-        if (UIApplication.activity == null) return
-        val activity = sharedApplication().activity()
+    private fun commitPush(viewController: UIViewController, animated: Boolean, addsToBackStack: Boolean) {
+        val activity = ownerActivity() ?: return
         //
         // Don' let push items to fragment when activity is finishing or destroyed
         //
@@ -219,11 +218,46 @@ open class UINavigationController: UIViewController() {
             }
         }
 
-       if (pushViewControllers.count() > 1) {
+        if (addsToBackStack) {
             fragmentTransaction.addToBackStack(viewController.javaClass.name)
         }
 
         fragmentTransaction.commitAllowingStateLoss()
+    }
+
+    // A destroyed owner counts as no activity, so a controller kept past its activity cannot act on another one
+    internal fun ownerActivity(): UIActivity? {
+        val owning = owner ?: return UIApplication.activity
+        return owning.get()?.takeUnless { it.isDestroyed }
+    }
+
+    internal override fun transactOnOwner(block: (FragmentManager) -> Unit) {
+        transact {
+            val manager = ownerActivity()?.supportFragmentManager ?: return@transact
+            block(manager)
+        }
+    }
+
+    // FragmentActivity.onStop stops the fragment manager before onSaveInstanceState creates the queue (API 28+),
+    // so a saved fragment manager opens the queue itself
+    private fun pausedQueue(): MutableList<() -> Unit>? {
+        val queue = this.pausedTransactions
+        if (queue != null) return queue
+        // Only UIActivity drains a queue, and only its own controller's
+        if (this.owner == null) return null
+        if (ownerActivity()?.supportFragmentManager?.isStateSaved != true) return null
+        this.pausedViewControllers = this.pausedViewControllers ?: NSMutableArray()
+        return mutableListOf<() -> Unit>().also { this.pausedTransactions = it }
+    }
+
+    // When the state is saved a fragment transaction throws, so it waits, in order, for the restart
+    private fun transact(block: () -> Unit) {
+        val queue = pausedQueue()
+        if (queue == null) {
+            block()
+            return
+        }
+        queue.add(block)
     }
 
     @InternalCocoaTouchApi

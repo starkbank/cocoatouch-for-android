@@ -1,1 +1,11 @@
-<manifest />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <provider
+            android:name="com.starkbank.cocoatouch.CocoaTouchInitializer"
+            android:authorities="${applicationId}.cocoatouch-initializer"
+            android:exported="false"
+            android:initOrder="100" />
+    </application>
+</manifest>

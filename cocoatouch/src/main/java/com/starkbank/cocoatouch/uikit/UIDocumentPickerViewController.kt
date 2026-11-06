@@ -9,7 +9,9 @@ interface UIDocumentPickerDelegate {
     fun documentPicker(controller: UIDocumentPickerViewController, uri: Uri)
 }
 
-class UIDocumentPickerViewController {
+class UIDocumentPickerViewController internal constructor(activity: UIActivity) {
+
+    constructor() : this(UIApplication.activity())
 
     enum class ContentTypes {
         pdf, imageOrPdf, photo
@@ -23,12 +25,12 @@ class UIDocumentPickerViewController {
     var delegate: UIDocumentPickerDelegate? = null
     var contentTypes = ContentTypes.pdf
 
-    private var selectPdfFromDocumentsResult: ActivityResultLauncher<String>
-    private var selectPhotoResult: ActivityResultLauncher<androidx.activity.result.PickVisualMediaRequest>
-    private var selectImageOrPdfResult: ActivityResultLauncher<Array<String>>
+    private var selectPdfFromDocumentsResult: ActivityResultLauncher<String>?
+    private var selectPhotoResult: ActivityResultLauncher<androidx.activity.result.PickVisualMediaRequest>?
+    private var selectImageOrPdfResult: ActivityResultLauncher<Array<String>>?
+    private var released = false
 
     init {
-        val activity = UIApplication.activity()
         selectPhotoResult = activity.registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             uri?.let { encodePdf(it) }
         }
@@ -44,14 +46,29 @@ class UIDocumentPickerViewController {
     }
 
     fun present() {
+        check(!released) {
+            "UIDocumentPickerViewController.shared belongs to a destroyed activity; " +
+                "read UIDocumentPickerViewController.shared again"
+        }
         getPdf()
+    }
+
+    internal fun release() {
+        selectPdfFromDocumentsResult?.unregister()
+        selectPhotoResult?.unregister()
+        selectImageOrPdfResult?.unregister()
+        selectPdfFromDocumentsResult = null
+        selectPhotoResult = null
+        selectImageOrPdfResult = null
+        delegate = null
+        released = true
     }
 
     private fun getPdf() {
         when(contentTypes){
-            ContentTypes.photo -> selectPhotoResult.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            ContentTypes.pdf -> selectPdfFromDocumentsResult.launch("application/pdf")
-            ContentTypes.imageOrPdf -> selectImageOrPdfResult.launch(arrayOf("image/*", "application/pdf"))
+            ContentTypes.photo -> selectPhotoResult?.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            ContentTypes.pdf -> selectPdfFromDocumentsResult?.launch("application/pdf")
+            ContentTypes.imageOrPdf -> selectImageOrPdfResult?.launch(arrayOf("image/*", "application/pdf"))
         }
     }
 

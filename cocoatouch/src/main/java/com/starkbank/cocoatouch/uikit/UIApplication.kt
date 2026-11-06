@@ -6,6 +6,7 @@ import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 object UIApplication: UIResponder() {
 
     var delegate: UIApplicationDelegate? = null
+    @InternalCocoaTouchApi
     var isNotificationsEnabled: Boolean = true
     var appearance: UIAppearance = UIDefaultAppearance
     @InternalCocoaTouchApi
@@ -20,15 +21,26 @@ object UIApplication: UIResponder() {
         return this
     }
 
+    fun initialize(context: Context) {
+        if (applicationContext != null) return
+        applicationContext = context.applicationContext
+    }
+
     internal fun attach(activity: UIActivity) {
         this.activity = activity
         (activity as? UIStoryboard)?.let { this.storyboard = it }
         this.applicationContext = activity.applicationContext
-        UIImagePickerController.shared = UIImagePickerController()
-        UIDocumentPickerViewController.shared = UIDocumentPickerViewController()
+        val pickers = activity.pickers ?: ActivityPickers(
+            image = UIImagePickerController(activity),
+            document = UIDocumentPickerViewController(activity)
+        ).also { activity.pickers = it }
+        UIImagePickerController.shared = pickers.image
+        UIDocumentPickerViewController.shared = pickers.document
     }
 
     internal fun detach(activity: UIActivity) {
+        activity.pickers?.release()
+        activity.pickers = null
         if (this.activity !== activity) return
         this.activity = null
         this.storyboard = null

@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - run: echo "$(curl -sfL https://services.gradle.org/distributions/gradle-8.13-wrapper.jar.sha256)  gradle/wrapper/gradle-wrapper.jar" | sha256sum -c -
+      - run: sh scripts/test-upload-central-bundle.sh
+      - run: sh scripts/test-verify-central-bundle.sh
+      - run: ./gradlew --no-daemon :cocoatouch:testDebugUnitTest :cocoatouch:lintRelease :cocoatouch:assembleRelease :sample:assembleDebug :sample:assembleMinified :cocoatouch:centralBundle -PVERSION_NAME=0.0.0-ci -PunsignedBundle
+      - run: sh scripts/verify-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip 0.0.0-ci --unsigned
+      - run: |
+          test -d cocoatouch/src/main
+          test -d cocoatouch/src
+          status=0
+          grep -rnE 'com\.starkbank\.android|com\.starkauth|BuildConfig|R\.font\.' cocoatouch/src/main || status=$?
+          test "$status" -eq 1
+          status=0
+          grep -rnE '@IB(Outlet|Action)\(R\.' cocoatouch/src || status=$?
+          test "$status" -eq 1

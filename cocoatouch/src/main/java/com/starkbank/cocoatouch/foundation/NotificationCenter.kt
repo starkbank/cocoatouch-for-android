@@ -6,29 +6,43 @@ import android.content.Intent
 import android.content.IntentFilter
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.starkbank.cocoatouch.uikit.UIApplication
+import java.util.concurrent.CopyOnWriteArrayList
+
+class NotificationObserver internal constructor(internal val receiver: BroadcastReceiver, val name: String)
 
 class NotificationCenter {
 
     companion object {
 
-        private var broadcastReceiver: BroadcastReceiver? = null
+        // Observers may be added or removed from any thread (copy-on-write list, synchronized LocalBroadcastManager);
+        // selectors always run on the main thread
+        private val observers = CopyOnWriteArrayList<NotificationObserver>()
 
-        fun addObserver(selector: ()-> (Unit), name: String, ) {
-            broadcastReceiver = object: BroadcastReceiver() {
-                override fun onReceive(p0: Context?, p1: Intent?) {
+        fun addObserver(selector: () -> Unit, name: String): NotificationObserver {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
                     selector.invoke()
                 }
             }
-            broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).registerReceiver(it, IntentFilter(name))
-            }
+            LocalBroadcastManager.getInstance(UIApplication.applicationContext!!)
+                .registerReceiver(receiver, IntentFilter(name))
+            val observer = NotificationObserver(receiver, name)
+            observers.add(observer)
+            return observer
         }
 
+        fun removeObserver(observer: NotificationObserver) {
+            if (!observers.remove(observer)) return
+            LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(observer.receiver)
+        }
+
+        @Deprecated(
+            "Remove the observer you added with the token addObserver returned",
+            level = DeprecationLevel.ERROR
+        )
         fun removeObserver() {
-            broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(
-                    it
-                )
+            for (observer in observers) {
+                removeObserver(observer)
             }
         }
 

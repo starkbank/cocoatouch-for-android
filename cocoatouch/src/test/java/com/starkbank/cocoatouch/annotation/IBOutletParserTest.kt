@@ -28,6 +28,38 @@ class HidingChildOutletFixture : HidingParentOutletFixture() {
     @IBOutlet(2) override lateinit var label: UILabel
 }
 
+open class ShadowBase : UIViewController() {
+
+    @IBOutlet(1) private lateinit var label: UILabel
+
+    fun baseLabel(): UILabel = label
+}
+
+class ShadowChild : ShadowBase() {
+
+    @IBOutlet(1) lateinit var label: UILabel
+}
+
+open class NullableBase : UIViewController() {
+
+    @IBOutlet(1) open var label: UILabel? = null
+}
+
+class NullableChild : NullableBase() {
+
+    @IBOutlet(2) override var label: UILabel? = null
+}
+
+open class InternalBase : UIViewController() {
+
+    @IBOutlet(1) internal open var label: UILabel? = null
+}
+
+class InternalChild : InternalBase() {
+
+    @IBOutlet(2) override var label: UILabel? = null
+}
+
 class IBOutletParserTest {
 
     @Test
@@ -43,6 +75,29 @@ class IBOutletParserTest {
         val labels = IBOutletParser.outletFields(HidingChildOutletFixture::class.java).filter { it.name == "label" }
         assertEquals(1, labels.size)
         assertEquals(HidingChildOutletFixture::class.java, labels.first().declaringClass)
+    }
+
+    @Test
+    fun aPrivateParentFieldAndASubclassFieldWithTheSameNameAreBothOutlets() {
+        val labels = IBOutletParser.outletFields(ShadowChild::class.java).filter { it.name == "label" }
+        assertEquals(
+            setOf(ShadowBase::class.java, ShadowChild::class.java),
+            labels.map { it.declaringClass }.toSet()
+        )
+    }
+
+    @Test
+    fun anOverriddenNullablePropertyIsBoundOnlyOnTheSubclass() {
+        val labels = IBOutletParser.outletFields(NullableChild::class.java).filter { it.name == "label" }
+        assertEquals(1, labels.size)
+        assertEquals(NullableChild::class.java, labels.first().declaringClass)
+    }
+
+    @Test
+    fun anOverriddenInternalPropertyIsBoundOnlyOnTheSubclass() {
+        val labels = IBOutletParser.outletFields(InternalChild::class.java).filter { it.name == "label" }
+        assertEquals(1, labels.size)
+        assertEquals(InternalChild::class.java, labels.first().declaringClass)
     }
 
     @Test

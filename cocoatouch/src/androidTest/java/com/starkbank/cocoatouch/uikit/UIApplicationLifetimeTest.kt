@@ -3,6 +3,7 @@ package com.starkbank.cocoatouch.uikit
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -13,8 +14,10 @@ import androidx.test.runner.lifecycle.Stage
 import com.starkbank.cocoatouch.PlainActivity
 import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.TranslucentActivity
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.foundation.NotificationCenter
+import com.starkbank.cocoatouch.foundation.NotificationObserver
 import com.starkbank.cocoatouch.foundation.UserDefaults
 import com.starkbank.cocoatouch.navigation
 import com.starkbank.cocoatouch.onMain
@@ -25,10 +28,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.ref.WeakReference
 
 @RunWith(AndroidJUnit4::class)
 class UIApplicationLifetimeTest {
@@ -123,13 +129,14 @@ class UIApplicationLifetimeTest {
     fun readersWorkAfterClose() {
         scenario.close()
         var notified = false
+        lateinit var observer: NotificationObserver
         instrumentation.runOnMainSync {
-            NotificationCenter.addObserver({ notified = true }, "afterClose")
+            observer = NotificationCenter.addObserver({ notified = true }, "afterClose")
             NotificationCenter.postNotification("afterClose")
             UIPasteboard.general.string = "afterClose"
         }
         instrumentation.waitForIdleSync()
-        instrumentation.runOnMainSync { NotificationCenter.removeObserver() }
+        instrumentation.runOnMainSync { NotificationCenter.removeObserver(observer) }
         assertEquals("afterClose", UIPasteboard.general.string)
         assertEquals(true, notified)
     }
@@ -182,6 +189,56 @@ class UIApplicationLifetimeTest {
     }
 
     @Test
+    fun translucentActivityOnTopKeepsTheOneBelowAttachedAfterItFinishes() {
+        val first = scenarioActivity()
+        instrumentation.runOnMainSync { first.startActivity(Intent(first, TranslucentActivity::class.java)) }
+        var translucent: TranslucentActivity? = null
+        awaitCondition("the TranslucentActivity to be attached") {
+            translucent = resumedActivities().filterIsInstance<TranslucentActivity>().firstOrNull()
+            translucent != null && UIApplication.activity === translucent
+        }
+        onMain { assertEquals(Lifecycle.State.STARTED, first.lifecycle.currentState) }
+        finishAndAwaitDestroyed(translucent!!)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(first, UIApplication.activity)
+            navigation(first).pushViewController(pushedController(first), false)
+        }
+        awaitCondition("the push to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
+    }
+
+    @Test
+    fun becomingTheTopResumedActivityAttachesIt() {
+        // The callback exists from API 29; below it nothing calls the override and its super does not exist
+        assumeTrue(Build.VERSION.SDK_INT >= 29)
+        val first = scenarioActivity()
+        var firstPicker: UIImagePickerController? = null
+        onMain { firstPicker = UIImagePickerController.shared }
+        launchSecondInstance(first)
+        onMain {
+            assertNotSame(first, UIApplication.activity)
+            first.onTopResumedActivityChanged(true)
+            assertSame(first, UIApplication.activity)
+            assertSame(firstPicker, UIImagePickerController.shared)
+        }
+    }
+
+    @Test
+    fun plainActivityKeepsTheFinishedStoryboardBelowIt() {
+        val first = scenarioActivity()
+        onMain { first.startActivity(Intent(first, PlainActivity::class.java)) }
+        lateinit var plain: PlainActivity
+        awaitCondition("the PlainActivity to resume") {
+            val resumed = resumedActivities().filterIsInstance<PlainActivity>().firstOrNull() ?: return@awaitCondition false
+            plain = resumed
+            true
+        }
+        finishAndAwaitDestroyed(first)
+        onMain { assertSame(first, UIApplication.storyboard) }
+        finishAndAwaitDestroyed(plain)
+    }
+
+    @Test
     fun pushQueuedWhileStoppedIsPresentedWhenTheActivityRestarts() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
@@ -190,6 +247,22 @@ class UIApplicationLifetimeTest {
         awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
         assertEquals(2, navigation(first).viewControllers.size)
         awaitCondition("the queued push to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 1 }
+    }
+
+    @Test
+    fun popOnAStoppedActivityDoesNotTouchTheAttachedOne() {
+        val first = scenarioActivity()
+        onMain { navigation(first).pushViewController(pushedController(first), false) }
+        awaitCondition("first to hold one pushed controller") { first.supportFragmentManager.backStackEntryCount == 1 }
+        val top = launchSecondInstance(first)
+        onMain { navigation(top).pushViewController(pushedController(top), false) }
+        awaitCondition("top to hold one pushed controller") { top.supportFragmentManager.backStackEntryCount == 1 }
+        onMain { navigation(first).popViewController(false) }
+        instrumentation.waitForIdleSync()
+        onMain { assertEquals(1, top.supportFragmentManager.backStackEntryCount) }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        awaitCondition("the queued pop to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 0 }
     }
 
     @Test
@@ -221,6 +294,90 @@ class UIApplicationLifetimeTest {
             application.unregisterActivityLifecycleCallbacks(callbacks)
         }
         assertEquals(listOf("prepareLaunch", "created"), events.take(2))
+    }
+
+    @Test
+    fun destroyedActivityIsCollected() {
+        assertCollected(onWorkerThread { destroyBothInstances() })
+    }
+
+    @Test
+    fun finishingTheTopRestoresTheBelowActivityPickers() {
+        val first = scenarioActivity()
+        var firstPicker: UIImagePickerController? = null
+        onMain { firstPicker = UIImagePickerController.shared }
+        val top = launchSecondInstance(first)
+        var topPicker: UIImagePickerController? = null
+        onMain { topPicker = UIImagePickerController.shared }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(firstPicker, UIImagePickerController.shared)
+            val error = assertThrows(IllegalStateException::class.java) { topPicker!!.present() }
+            assertEquals(
+                "UIImagePickerController.shared belongs to a destroyed activity; read UIImagePickerController.shared again",
+                error.message
+            )
+        }
+    }
+
+    @Test
+    fun finishingTheTopRestoresTheBelowActivityDocumentPicker() {
+        val first = scenarioActivity()
+        var firstPicker: UIDocumentPickerViewController? = null
+        onMain { firstPicker = UIDocumentPickerViewController.shared }
+        val top = launchSecondInstance(first)
+        var topPicker: UIDocumentPickerViewController? = null
+        onMain { topPicker = UIDocumentPickerViewController.shared }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(firstPicker, UIDocumentPickerViewController.shared)
+            val error = assertThrows(IllegalStateException::class.java) { topPicker!!.present() }
+            assertEquals(
+                "UIDocumentPickerViewController.shared belongs to a destroyed activity; " +
+                    "read UIDocumentPickerViewController.shared again",
+                error.message
+            )
+        }
+    }
+
+    // The last activity destroyed is the one the static shared pickers point to
+    private fun destroyBothInstances(): WeakReference<TestStoryboard> {
+        val first = scenarioActivity()
+        val top = launchSecondInstance(first)
+        finishAndAwaitDestroyed(first)
+        finishAndAwaitDestroyed(top)
+        return WeakReference(top)
+    }
+
+    private fun assertCollected(reference: WeakReference<*>) {
+        var attempts = 0
+        while (reference.get() != null && attempts < 50) {
+            Runtime.getRuntime().gc()
+            System.runFinalization()
+            Thread.sleep(100)
+            attempts++
+        }
+        assertNull("still reachable after $attempts collections", reference.get())
+    }
+
+    // A worker's stack dies with it, so no stale slot of the test thread can keep an activity alive
+    private fun <T> onWorkerThread(block: () -> T): T {
+        var result: T? = null
+        var failure: Throwable? = null
+        val worker = Thread {
+            try {
+                result = block()
+            } catch (error: Throwable) {
+                failure = error
+            }
+        }
+        worker.start()
+        worker.join()
+        failure?.let { throw it }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
     }
 
     private fun pushedController(activity: TestStoryboard): UIViewController {

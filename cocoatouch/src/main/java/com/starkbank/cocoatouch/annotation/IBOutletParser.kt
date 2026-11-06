@@ -4,6 +4,7 @@ import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -11,6 +12,7 @@ object IBOutletParser {
 
     private val fieldsByType = ConcurrentHashMap<Class<*>, List<Field>>()
 
+    @InternalCocoaTouchApi
     fun parse(controller: UIResponder) {
         for (field in outletFields(controller.javaClass)) {
             parse(field, controller)
@@ -21,20 +23,31 @@ object IBOutletParser {
         return fieldsByType.computeIfAbsent(type) { walk(it) }
     }
 
-    // Walks up to UIResponder so a base controller's outlets are bound; a subclass field hides the parent's by name.
-    // The result is constant per class, so it is built once and made accessible once
+    // Walks up to UIResponder so a base controller's outlets are bound. A field is keyed by its declaring class only when
+    // it is private and has no non-private getter: a Kotlin property always has a private backing field, but one with a
+    // getter can be overridden, so the subclass property replaces it by name. The result is constant per class, so it is
+    // built once and made accessible once
     private fun walk(type: Class<*>): List<Field> {
-        val fieldsByName = LinkedHashMap<String, Field>()
+        val fieldsByKey = LinkedHashMap<Pair<Class<*>?, String>, Field>()
         var current: Class<*>? = type
         while (current != null && current != UIResponder::class.java) {
             for (field in current.declaredFields) {
                 if (!field.isAnnotationPresent(IBOutlet::class.java)) continue
                 field.isAccessible = true
-                fieldsByName.putIfAbsent(field.name, field)
+                val owner = if (isOwnedByItsClass(field)) current else null
+                fieldsByKey.putIfAbsent(Pair(owner, field.name), field)
             }
             current = current.superclass
         }
-        return fieldsByName.values.toList()
+        return fieldsByKey.values.toList()
+    }
+
+    private fun isOwnedByItsClass(field: Field): Boolean {
+        if (!Modifier.isPrivate(field.modifiers)) return false
+        val getterName = "get" + field.name.replaceFirstChar { it.uppercase() }
+        return field.declaringClass.declaredMethods.none {
+            !Modifier.isPrivate(it.modifiers) && (it.name == getterName || it.name.startsWith("$getterName$"))
+        }
     }
 
     private fun parse(field: Field, controller: UIResponder) {

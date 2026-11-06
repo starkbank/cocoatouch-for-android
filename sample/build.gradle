@@ -44,8 +44,10 @@ kotlin {
     }
 }
 
+def cocoatouchVersion = findProperty('cocoatouchVersion')
+
 dependencies {
-    implementation project(':cocoatouch')
+    implementation(cocoatouchVersion ? "com.starkbank:cocoatouch:$cocoatouchVersion" : project(':cocoatouch'))
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'com.google.android.material:material:1.12.0'

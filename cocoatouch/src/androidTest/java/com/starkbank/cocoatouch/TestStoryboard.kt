@@ -19,6 +19,27 @@ class TestStoryboard : UIStoryboard() {
         launchEvents.add("prepareLaunch")
     }
 
+    // Runs right after super.onStop(), where the fragment manager is already stopped but onSaveInstanceState has not run
+    var afterStop: (() -> Unit)? = null
+
+    override fun onStop() {
+        super.onStop()
+        afterStop?.invoke()
+    }
+
+    // Lets a test observe a failure of the queued transactions replayed by onStart without crashing the process
+    var capturesStartFailure = false
+    var startFailure: Throwable? = null
+
+    override fun onStart() {
+        try {
+            super.onStart()
+        } catch (error: Throwable) {
+            if (!capturesStartFailure) throw error
+            startFailure = error
+        }
+    }
+
     fun navigation(): UINavigationController {
         return navigationController
     }
@@ -39,6 +60,7 @@ class TestStoryboard : UIStoryboard() {
     override fun viewControllerForIdentifier(identifier: Int): UIViewController {
         if (identifier == R.layout.cocoatouch_test_root) return RecordingViewController()
         if (identifier == R.layout.cocoatouch_test_pushed) return PushedViewController()
+        if (identifier == R.layout.cocoatouch_test_tabs) return TestTabBarController()
         return super.viewControllerForIdentifier(identifier)
     }
 }
