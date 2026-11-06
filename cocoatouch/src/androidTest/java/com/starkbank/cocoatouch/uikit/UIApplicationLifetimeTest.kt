@@ -27,10 +27,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.ref.WeakReference
 
 @RunWith(AndroidJUnit4::class)
 class UIApplicationLifetimeTest {
@@ -243,6 +245,66 @@ class UIApplicationLifetimeTest {
             application.unregisterActivityLifecycleCallbacks(callbacks)
         }
         assertEquals(listOf("prepareLaunch", "created"), events.take(2))
+    }
+
+    @Test
+    fun destroyedActivityIsCollected() {
+        val reference = onWorkerThread { destroyBothInstances() }
+        var attempts = 0
+        while (reference.get() != null && attempts < 20) {
+            Runtime.getRuntime().gc()
+            System.runFinalization()
+            Thread.sleep(100)
+            attempts++
+        }
+        assertNull(reference.get())
+    }
+
+    @Test
+    fun finishingTheTopRestoresTheBelowActivityPickers() {
+        val first = scenarioActivity()
+        var firstPicker: UIImagePickerController? = null
+        onMain { firstPicker = UIImagePickerController.shared }
+        val top = launchSecondInstance(first)
+        var topPicker: UIImagePickerController? = null
+        onMain { topPicker = UIImagePickerController.shared }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        onMain {
+            assertSame(firstPicker, UIImagePickerController.shared)
+            val error = assertThrows(IllegalStateException::class.java) { topPicker!!.present() }
+            assertEquals(
+                "UIImagePickerController.shared belongs to a destroyed activity; read UIImagePickerController.shared again",
+                error.message
+            )
+        }
+    }
+
+    // The last activity destroyed is the one the static shared pickers point to
+    private fun destroyBothInstances(): WeakReference<TestStoryboard> {
+        val first = scenarioActivity()
+        val top = launchSecondInstance(first)
+        finishAndAwaitDestroyed(first)
+        finishAndAwaitDestroyed(top)
+        return WeakReference(top)
+    }
+
+    // A worker's stack dies with it, so no stale slot of the test thread can keep an activity alive
+    private fun <T> onWorkerThread(block: () -> T): T {
+        var result: T? = null
+        var failure: Throwable? = null
+        val worker = Thread {
+            try {
+                result = block()
+            } catch (error: Throwable) {
+                failure = error
+            }
+        }
+        worker.start()
+        worker.join()
+        failure?.let { throw it }
+        @Suppress("UNCHECKED_CAST")
+        return result as T
     }
 
     private fun pushedController(activity: TestStoryboard): UIViewController {

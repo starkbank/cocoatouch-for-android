@@ -31,14 +31,16 @@ object UIApplication: UIResponder() {
         (activity as? UIStoryboard)?.let { this.storyboard = it }
         this.applicationContext = activity.applicationContext
         val pickers = activity.pickers ?: ActivityPickers(
-            image = UIImagePickerController(),
-            document = UIDocumentPickerViewController()
+            image = UIImagePickerController(activity),
+            document = UIDocumentPickerViewController(activity)
         ).also { activity.pickers = it }
         UIImagePickerController.shared = pickers.image
         UIDocumentPickerViewController.shared = pickers.document
     }
 
     internal fun detach(activity: UIActivity) {
+        activity.pickers?.release()
+        activity.pickers = null
         if (this.activity !== activity) return
         this.activity = null
         this.storyboard = null

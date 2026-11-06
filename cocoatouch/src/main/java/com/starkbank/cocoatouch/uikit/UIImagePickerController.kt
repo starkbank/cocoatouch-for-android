@@ -18,7 +18,9 @@ interface UIImagePickerControllerDelegate {
     )
 }
 
-class UIImagePickerController {
+class UIImagePickerController internal constructor(activity: UIActivity) {
+
+    constructor() : this(UIApplication.activity())
 
     enum class InfoKey {
         originalImage
@@ -34,16 +36,17 @@ class UIImagePickerController {
             internal set
     }
 
-    private var selectImageFromGalleryResult: ActivityResultLauncher<String>
-    private var takePictureFromCameraResult: ActivityResultLauncher<Uri>
-    private var permissionRequestResult: ActivityResultLauncher<String>
+    private var owner: UIActivity? = activity
+    private var selectImageFromGalleryResult: ActivityResultLauncher<String>?
+    private var takePictureFromCameraResult: ActivityResultLauncher<Uri>?
+    private var permissionRequestResult: ActivityResultLauncher<String>?
     private var latestTmpUri: Uri? = null
+    private var released = false
 
     var delegate: UIImagePickerControllerDelegate? = null
     var sourceType: SourceType = SourceType.photoLibrary
 
     init {
-        val activity = UIApplication.activity()
         selectImageFromGalleryResult =
             activity.registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
                 uri?.let {
@@ -69,29 +72,44 @@ class UIImagePickerController {
     }
 
     fun present() {
+        check(!released) {
+            "UIImagePickerController.shared belongs to a destroyed activity; read UIImagePickerController.shared again"
+        }
         when (sourceType) {
             SourceType.photoLibrary -> getImage()
             SourceType.camera -> getPicture()
         }
     }
 
+    internal fun release() {
+        selectImageFromGalleryResult?.unregister()
+        takePictureFromCameraResult?.unregister()
+        permissionRequestResult?.unregister()
+        selectImageFromGalleryResult = null
+        takePictureFromCameraResult = null
+        permissionRequestResult = null
+        owner = null
+        delegate = null
+        released = true
+    }
+
     private fun getImage() {
-        selectImageFromGalleryResult.launch("image/*")
+        selectImageFromGalleryResult?.launch("image/*")
     }
 
     private fun getPicture() {
-        val activity = UIApplication.activity()
+        val activity = owner ?: return
         if (ContextCompat.checkSelfPermission(
                 activity,
                 Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_DENIED
         ) {
-            permissionRequestResult.launch(Manifest.permission.CAMERA)
+            permissionRequestResult?.launch(Manifest.permission.CAMERA)
             return
         }
         getTmpFileUri().let { uri ->
             latestTmpUri = uri
-            takePictureFromCameraResult.launch(uri)
+            takePictureFromCameraResult?.launch(uri)
         }
     }
 

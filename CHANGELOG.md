@@ -86,6 +86,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:
 - The application context is set at process start by a content provider (`UIApplication.initialize(context)` does the same by hand), so `UserDefaults`, `NotificationCenter` and `UIPasteboard` work with no activity; the previous copy needed a launched activity first.
 - `UIApplication` attaches in `onCreate`, re-attaches in `onStart` and releases on destroy.
+- `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are created once per activity and released when it is destroyed; a picker kept from a destroyed activity throws on `present()`.
 - `UIApplication.activity`/`storyboard`, `UIImagePickerController.shared` and `UIDocumentPickerViewController.shared` are filled by the library and read-only for apps, which must delete their own assignments.
 - `UIActivity.prepareLaunch()` runs before `super.onCreate`.
 - Navigation requested after the activity is destroyed is ignored.
