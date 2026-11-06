@@ -1,0 +1,58 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.starkbank.cocoatouch'
+    compileSdk 36
+    resourcePrefix 'cocoatouch_'
+
+    defaultConfig {
+        minSdk 25
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        error.add('ResourceName')
+        abortOnError true
+    }
+    testOptions {
+        // UIColor's default argument calls Color.parseColor, which throws in the android.jar stub
+        unitTests.returnDefaultValues = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
+        optIn.add('com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi')
+    }
+}
+
+dependencies {
+    // api: UIActivity extends AppCompatActivity and UIFragment extends Fragment in public signatures
+    api 'androidx.appcompat:appcompat:1.7.0'
+    api 'androidx.fragment:fragment-ktx:1.8.9'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    // api: UITableView and UICollectionView expose RecyclerView in public signatures
+    api 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+}
