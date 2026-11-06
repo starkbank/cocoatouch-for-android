@@ -21,6 +21,11 @@ object UIApplication: UIResponder() {
         return this
     }
 
+    fun initialize(context: Context) {
+        if (applicationContext != null) return
+        applicationContext = context.applicationContext
+    }
+
     internal fun attach(activity: UIActivity) {
         this.activity = activity
         (activity as? UIStoryboard)?.let { this.storyboard = it }

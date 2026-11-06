@@ -236,7 +236,7 @@ Requirements of the consuming app:
 - `android.nonFinalResIds=false` in `gradle.properties`, so `@IBOutlet(R.id.x)` accepts the ids.
 - `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider.
 - `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.
-- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; never call `UserDefaults.standard` from a `Service` or from `Application.onCreate`.
+- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults`, `NotificationCenter` and `UIPasteboard`, exists from process start because the library initialises itself through a content provider, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups.
 - Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
 - `UIApplication.appearance` sets the theme; a change applies to views created afterwards, and presenting the screen again is up to the app.
 - Use `@id/cocoatouch_tab_container` in tab layouts.
@@ -411,7 +411,7 @@ You can set any ViewController you want.
 | `NSIndexPath` | `NSIndexPath` | yes | - |
 | `NotificationCenter` | `NotificationCenter` | yes | - |
 | `NSNotificationName` | `NSNotification.Name` | yes | - |
-| `UserDefaults` | `UserDefaults` | yes | No `set<T>`/`object`; never call `standard` from a `Service` or `Application.onCreate` |
+| `UserDefaults` | `UserDefaults` | yes | No `set<T>`/`object`; usable before any activity |
 | `DispatchGroup` | `DispatchGroup` | yes | `leave()` without `enter()` throws |
 | `DispatchQueue` | `DispatchQueue` | yes | - |
 | `Transition` | none | Android-specific | - |
