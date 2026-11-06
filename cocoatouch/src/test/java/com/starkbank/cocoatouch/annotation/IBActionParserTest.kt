@@ -1,5 +1,7 @@
 package com.starkbank.cocoatouch.annotation
 
+import android.content.Context
+import android.widget.FrameLayout
 import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UIResponder
@@ -7,6 +9,7 @@ import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,12 +27,43 @@ open class ChildActionFixture : ParentActionFixture() {
     @IBAction(3) fun tap(sender: UIView) {}
 }
 
+open class SubmitBaseFixture : UIViewController() {
+
+    @IBAction(7) fun submit(sender: UIView) {}
+}
+
+class SubmitChildFixture : SubmitBaseFixture() {
+
+    @IBAction(7) fun submitAndTrack(sender: UIView) {}
+}
+
+class NoSenderFixture : UIViewController() {
+
+    @IBAction(1) fun noSender() {}
+}
+
+abstract class AbstractSender : UIResponder()
+
+class AbstractSenderFixture : UIViewController() {
+
+    @IBAction(1) fun act(sender: AbstractSender) {}
+}
+
+class MissingViewFixture : UIViewController() {
+
+    @IBAction(999999) fun act(sender: UIView) {}
+}
+
 class GrandChildActionFixture : ChildActionFixture()
 
 class OverridingActionFixture : ParentActionFixture() {
 
     @IBAction(1) override fun tap(sender: UIButton) {}
 }
+
+// The android.jar stubs ignore their Context, and Kotlin forbids a literal null for a Java non-null parameter
+@Suppress("UNCHECKED_CAST")
+private fun <T> nullOf(): T = null as T
 
 class IBActionParserTest {
 
@@ -49,6 +83,41 @@ class IBActionParserTest {
     @Test
     fun overloadWithOtherParameterTypesIsNotHidden() {
         assertEquals(2, IBActionParser.actionMethods(ChildActionFixture::class.java).count { it.name == "tap" })
+    }
+
+    @Test
+    fun oneViewIdKeepsTheSubclassHandlerOnly() {
+        val names = IBActionParser.actionMethods(SubmitChildFixture::class.java)
+            .filter { it.getAnnotation(IBAction::class.java)!!.value == 7 }
+            .map { it.name }
+        assertEquals(listOf("submitAndTrack"), names)
+    }
+
+    @Test
+    fun actionWithoutSenderParameterFailsAtBind() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(NoSenderFixture()) }
+        assertTrue(error.message!!.contains("exactly one sender parameter"))
+    }
+
+    @Test
+    fun abstractSenderTypeFailsAtBind() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(AbstractSenderFixture()) }
+        assertTrue(error.message!!.contains("no public no-arg constructor"))
+    }
+
+    @Test
+    fun missingActionViewFailsWithTheControllerAndId() {
+        val fixture = MissingViewFixture()
+        fixture.view = UIView().apply { widget = FrameLayout(nullOf<Context>()) }
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(fixture) }
+        assertTrue(error.message!!.contains("999999"))
+        assertTrue(error.message!!.contains("MissingViewFixture"))
+    }
+
+    @Test
+    fun actionBoundBeforeTheViewExistsSaysSo() {
+        val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(MissingViewFixture()) }
+        assertTrue(error.message!!.contains("has a view"))
     }
 
     @Test

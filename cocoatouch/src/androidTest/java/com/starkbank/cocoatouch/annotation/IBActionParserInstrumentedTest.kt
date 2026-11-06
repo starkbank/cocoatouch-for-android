@@ -12,6 +12,7 @@ import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -25,6 +26,13 @@ class ViewActionFixture : UIViewController() {
 
     @IBAction(1) fun tap(sender: UIView) {
         this.sender = sender
+    }
+}
+
+class BoomFixture : UIViewController() {
+
+    @IBAction(1) fun boom(sender: UIView) {
+        throw IllegalArgumentException("boom")
     }
 }
 
@@ -59,6 +67,20 @@ class IBActionParserInstrumentedTest {
             IBActionParser.parse(fixture)
             clickedView.performClick()
             assertSame(clickedView, (fixture.sender as UIView).widget)
+        }
+    }
+
+    @Test
+    fun handlerExceptionReachesTheCaller() {
+        onMain {
+            val clickedView = View(UIApplication.context()).apply { id = 1 }
+            val fixture = BoomFixture()
+            fixture.view = UIView().apply {
+                widget = FrameLayout(UIApplication.context()).apply { addView(clickedView) }
+            }
+            IBActionParser.parse(fixture)
+            val error = assertThrows(IllegalArgumentException::class.java) { clickedView.performClick() }
+            assertEquals("boom", error.message)
         }
     }
 

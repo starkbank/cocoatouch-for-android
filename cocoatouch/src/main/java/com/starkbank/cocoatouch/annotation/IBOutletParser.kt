@@ -54,7 +54,7 @@ object IBOutletParser {
 
     // Same preconditions as the viewWithTag overrides: a controller looks in its view, a fragment-backed view in its
     // fragment's container, anything else in its own widget
-    private fun rootView(host: UIResponder): View? {
+    internal fun rootView(host: UIResponder): View? {
         if (host is UIViewController) return host.view?.let { rootView(it) }
         if (host !is UIView) return host.widget
         val fragment = host.fragment() ?: return host.widget

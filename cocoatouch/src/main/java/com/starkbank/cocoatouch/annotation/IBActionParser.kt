@@ -3,7 +3,9 @@ import android.view.View
 import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -21,20 +23,21 @@ object IBActionParser {
         return methodsByType.computeIfAbsent(type) { walk(it) }
     }
 
-    // Walks up to UIResponder so a base controller's actions are bound; a subclass method hides the parent's
-    // one with the same name and parameters. The result is constant per class, so it is built once
+    // Walks up to UIResponder so a base controller's actions are bound. One view id has one handler: the subclass
+    // entry wins, otherwise the base class's listener would be set last and replace it.
+    // The result is constant per class, so it is built once
     private fun walk(type: Class<*>): List<Method> {
-        val methodsBySignature = LinkedHashMap<Pair<String, List<Class<*>>>, Method>()
+        val methodsByViewId = LinkedHashMap<Int, Method>()
         var current: Class<*>? = type
         while (current != null && current != UIResponder::class.java) {
             for (method in current.declaredMethods) {
                 if (!method.isAnnotationPresent(IBAction::class.java)) continue
                 method.isAccessible = true
-                methodsBySignature.putIfAbsent(Pair(method.name, method.parameterTypes.toList()), method)
+                methodsByViewId.putIfAbsent(method.getAnnotation(IBAction::class.java)!!.value, method)
             }
             current = current.superclass
         }
-        return methodsBySignature.values.toList()
+        return methodsByViewId.values.toList()
     }
 
     private fun parse(method: Method, controller: UIResponder) {
@@ -43,14 +46,40 @@ object IBActionParser {
         if (action.value == DefaultActions.onBackPressed)
             return
 
-        val view: View = controller.viewWithTag(action.value)
+        checkSender(method, controller)
+        val view = viewOf(action.value, method, controller)
         view.setOnClickListener {
             try {
                 method.invoke(controller, sender(view, method))
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (e: InvocationTargetException) {
+                throw e.targetException
             }
         }
+    }
+
+    private fun checkSender(method: Method, controller: UIResponder) {
+        if (method.parameterTypes.size != 1)
+            throw IllegalStateException(
+                "@IBAction ${method.name} in ${controller.javaClass.simpleName} must declare exactly one sender parameter"
+            )
+        val type = method.parameterTypes[0]
+        if (!UIResponder::class.java.isAssignableFrom(type)) return
+        if (!Modifier.isAbstract(type.modifiers) && type.constructors.any { it.parameterTypes.isEmpty() }) return
+        throw IllegalStateException(
+            "@IBAction ${method.name} in ${controller.javaClass.simpleName}: " +
+                "sender type ${type.simpleName} has no public no-arg constructor"
+        )
+    }
+
+    private fun viewOf(id: Int, method: Method, controller: UIResponder): View {
+        val root = IBOutletParser.rootView(controller)
+            ?: throw IllegalStateException(
+                "@IBAction ${method.name} bound before ${controller.javaClass.simpleName} has a view"
+            )
+        return root.findViewById<View?>(id)
+            ?: throw IllegalStateException(
+                "@IBAction ${method.name}: view $id not found in ${controller.javaClass.simpleName}"
+            )
     }
 
     private fun sender(view: View, method: Method): UIResponder {

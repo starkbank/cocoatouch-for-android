@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.starkbank.cocoatouch.compatibility.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
-import java.lang.reflect.Method
+import java.lang.reflect.InvocationTargetException
 
 
 open class UIActivity: AppCompatActivity() {
@@ -69,19 +69,17 @@ open class UIActivity: AppCompatActivity() {
     }
 
     private fun dispatchBackPressed() {
-        var lastController: UIViewController? = null
-        if (this.navigationController.modalViewControllers.count() > 0)
-            lastController = this.navigationController.modalViewControllers.lastObject()
-        else if (this.navigationController.pushViewControllers.count() > 0)
-            lastController = this.navigationController.pushViewControllers.lastObject()
-        val method: Method? = BackPressedParser.getMethod(lastController)
-        if (method == null)
-            this.finish()
-
+        val lastController = navigationController.modalViewControllers.lastObject()
+            ?: navigationController.pushViewControllers.lastObject()
+        val method = BackPressedParser.getMethod(lastController)
+        if (method == null) {
+            finish()
+            return
+        }
         try {
-            method?.invoke(lastController, UIButton())
-        } catch (e: Exception) {
-            e.printStackTrace()
+            method.invoke(lastController, UIButton())
+        } catch (e: InvocationTargetException) {
+            throw e.targetException
         }
     }
 
