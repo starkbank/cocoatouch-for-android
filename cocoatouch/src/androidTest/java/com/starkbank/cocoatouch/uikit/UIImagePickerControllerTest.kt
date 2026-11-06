@@ -82,6 +82,7 @@ class UIImagePickerControllerTest {
             picker!!.onCaptureResult(false)
         }
         assertFalse(file.exists())
+        assertNull(picker!!.latestTmpFile)
         assertNull(picker!!.latestTmpUri)
         assertEquals(0, delegate.uris.size)
     }
