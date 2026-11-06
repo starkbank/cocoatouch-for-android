@@ -3,7 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
+    id 'signing'
 }
+
+group = 'com.starkbank'
+version = VERSION_NAME
 
 android {
     namespace 'com.starkbank.cocoatouch'
@@ -27,6 +32,12 @@ android {
     lint {
         error.add('ResourceName')
         abortOnError true
+    }
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
     testOptions {
         // UIColor's default argument calls Color.parseColor, which throws in the android.jar stub
@@ -55,4 +66,77 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            artifactId = 'cocoatouch'
+            afterEvaluate { from components.release }
+            pom {
+                name = 'cocoatouch'
+                description = 'CocoaTouch (UIKit) interfaces for Android, written in Kotlin.'
+                url = 'https://github.com/starkbank/cocoatouch-for-android'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://github.com/starkbank/cocoatouch-for-android/blob/master/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'starkbank'
+                        name = 'Stark Bank'
+                        organization = 'Stark Bank'
+                        organizationUrl = 'https://starkbank.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/starkbank/cocoatouch-for-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/starkbank/cocoatouch-for-android.git'
+                    url = 'https://github.com/starkbank/cocoatouch-for-android'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'centralBundle'
+            url = layout.buildDirectory.dir('central-bundle')
+        }
+    }
+}
+
+signing {
+    def signingKey = project.findProperty('signingKey')
+    if (signingKey) {
+        useInMemoryPgpKeys(signingKey, project.findProperty('signingPassword'))
+    }
+    required { gradle.taskGraph.hasTask(':cocoatouch:centralBundle') && !project.hasProperty('unsignedBundle') }
+    sign publishing.publications.release
+}
+
+// Fails when the task graph is ready, before signing runs, so this message is the first error
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':cocoatouch:centralBundle') && project.version.toString().endsWith('-SNAPSHOT')) {
+        throw new GradleException("Central rejects SNAPSHOT versions: ${project.version}")
+    }
+}
+
+def cleanCentralBundle = tasks.register('cleanCentralBundle', Delete) {
+    delete layout.buildDirectory.dir('central-bundle')
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn cleanCentralBundle
+}
+
+tasks.register('centralBundle', Zip) {
+    dependsOn 'publishReleasePublicationToCentralBundleRepository'
+    // The Portal expects the Maven layout at the zip root, only the released version, without metadata files
+    from(layout.buildDirectory.dir('central-bundle')) {
+        include "com/starkbank/cocoatouch/${project.version}/**"
+    }
+    archiveFileName = 'central-bundle.zip'
+    destinationDirectory = layout.buildDirectory.dir('distributions')
 }
