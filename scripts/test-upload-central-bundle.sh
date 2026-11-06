@@ -10,7 +10,9 @@ touch "$work/bundle.zip"
 
 cat > "$work/bin/curl" <<'STUB'
 #!/bin/sh
-cat > /dev/null
+input=$(cat)
+printf '%s\n' "$input" >> "$STUB_DIR/stdins"
+printf '%s\n' "$*" >> "$STUB_DIR/argvs"
 method=GET
 previous=
 for arg in "$@"; do
@@ -40,6 +42,12 @@ case "$url" in
         fi
         echo "{\"deploymentState\":\"$answer\",\"errors\":{\"pom\":[\"bad pom\"]}}"
         ;;
+    */deployment/*)
+        if [ "$(cat "$STUB_DIR/delete")" = "500" ]; then
+            echo '{"error":"delete refused"}'
+            exit 22
+        fi
+        ;;
 esac
 STUB
 printf '#!/bin/sh\n' > "$work/bin/sleep"
@@ -60,7 +68,7 @@ run() {
     mode=$2
     expectedCode=$3
     attempts=$4
-    rm -f "$work/calls" "$work/pollCount" "$work/summary"
+    rm -f "$work/calls" "$work/pollCount" "$work/summary" "$work/stdins" "$work/argvs"
     : > "$work/summary"
     code=0
     PATH="$work/bin:$PATH" CENTRAL_POLL_ATTEMPTS=$attempts sh "$script" "$work/bundle.zip" cocoatouch-test "$mode" > "$work/out" 2> "$work/err" || code=$?
@@ -77,6 +85,7 @@ expectDeleteCount() {
 }
 
 echo 200 > "$work/upload"
+echo 200 > "$work/delete"
 
 printf 'VALIDATED\n' > "$work/polls"
 run validatedKeep keep 0 3
@@ -119,9 +128,31 @@ echo "ok: pollRecovers"
 printf 'PENDING\n' > "$work/polls"
 run timeoutDrop drop 1 3
 expectSummary "deployment dep-42 uploaded
-deployment dep-42 timeout"
+deployment dep-42 timeout (PENDING)"
 expectDeleteCount 1
 echo "ok: timeoutDrop"
+
+printf 'PENDING\n503\n' > "$work/polls"
+run pollAttemptCounts keep 1 2
+expectSummary "deployment dep-42 uploaded
+deployment dep-42 timeout (PENDING)"
+[ "$(grep -c '^POST .*status' "$work/calls")" = "2" ] || fail "expected exactly 2 polls"
+echo "ok: pollAttemptCounts"
+
+printf 'VALIDATED\n' > "$work/polls"
+run tokenOnStdinOnly drop 0 3
+! grep -q 'Bearer' "$work/argvs" || fail "token in argv"
+! grep -v '^Authorization: Bearer ' "$work/stdins" || fail "stdin without header"
+[ "$(wc -l < "$work/stdins" | tr -d ' ')" = "$(wc -l < "$work/calls" | tr -d ' ')" ] || fail "a call without stdin header"
+echo "ok: tokenOnStdinOnly"
+
+echo 500 > "$work/delete"
+run deleteFailsAfterValidatedDrop drop 1 3
+expectSummary "deployment dep-42 uploaded
+deployment dep-42 VALIDATED"
+grep -Fq 'delete refused' "$work/err" || fail "delete body not on stderr"
+echo 200 > "$work/delete"
+echo "ok: deleteFailsAfterValidatedDrop"
 
 run badMode purge 2 3
 expectSummary ""

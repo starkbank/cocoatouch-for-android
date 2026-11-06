@@ -6,6 +6,7 @@ name=${2:?usage: upload-central-bundle.sh <zip> <deploymentName> <keep|drop>}
 mode=${3:?usage: upload-central-bundle.sh <zip> <deploymentName> <keep|drop>}
 api=https://central.sonatype.com/api/v1/publisher
 attemptCap=${CENTRAL_POLL_ATTEMPTS:-90}
+deadlineSeconds=${CENTRAL_POLL_DEADLINE_SECONDS:-1500}
 
 case "$mode" in
     keep|drop) ;;
@@ -47,7 +48,8 @@ id=$(call -F "bundle=@$zip" "$api/upload?name=$name&publishingType=USER_MANAGED"
 record uploaded
 
 attempt=0
-while [ "$attempt" -lt "$attemptCap" ]; do
+pollStart=$(date +%s)
+while [ "$attempt" -lt "$attemptCap" ] && [ $(($(date +%s) - pollStart)) -lt "$deadlineSeconds" ]; do
     attempt=$((attempt + 1))
     if ! response=$(call -X POST "$api/status?id=$id"); then
         printf '%s\n' "$response" >&2
@@ -55,6 +57,7 @@ while [ "$attempt" -lt "$attemptCap" ]; do
         continue
     fi
     if ! polled=$(printf '%s' "$response" | jq -r '.deploymentState'); then
+        printf '%s\n' "$response" >&2
         sleep 10
         continue
     fi
@@ -74,6 +77,6 @@ while [ "$attempt" -lt "$attemptCap" ]; do
     sleep 10
 done
 
-state=timeout
+state="timeout ($state)"
 [ "$mode" != "drop" ] || drop
 exit 1
