@@ -44,3 +44,7 @@ class TestStoryboard : UIStoryboard() {
 fun navigation(activity: UIActivity): UINavigationController {
     return (activity as TestStoryboard).navigation()
 }
+
+fun storyboard(activity: UIActivity): UIStoryboard {
+    return activity as UIStoryboard
+}

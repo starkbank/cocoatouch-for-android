@@ -151,14 +151,12 @@ open class UIActivity: AppCompatActivity() {
     }
 
     private fun finishPausedTransitions() {
-        if (this.navigationController.pausedViewControllers == null) {
-            return
-        }
-        for (controller in this.navigationController.pausedViewControllers!!) {
+        val paused = this.navigationController.pausedViewControllers ?: return
+        // Detach first: presenting re-queues while the list is non-null, which breaks the iteration
+        this.navigationController.pausedViewControllers = null
+        for (controller in paused) {
             this.navigationController.presentPushViewController(controller, false)
         }
-        this.navigationController.pausedViewControllers!!.removeAllObjects()
-        this.navigationController.pausedViewControllers = null
     }
 
 }
