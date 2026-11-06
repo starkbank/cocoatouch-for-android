@@ -22,6 +22,7 @@ class WKWebViewTest {
 
     private val pageA = "file:///android_asset/cocoatouch_test_web_a.html"
     private val countScript = "String(window.injected)"
+    private val countingSource = "window.injected = (window.injected || 0) + 1"
     private lateinit var scenario: ActivityScenario<TestStoryboard>
     private lateinit var webView: WKWebView
     private lateinit var widget: WebView
@@ -34,14 +35,14 @@ class WKWebViewTest {
             activity.addContentView(widget, FrameLayout.LayoutParams(400, 400))
             webView = WKWebView()
             webView.widget = widget
+        }
+    }
+
+    private fun configure(source: String = countingSource) {
+        onMain {
             webView.configuration = WKWebViewConfiguration().also {
                 it.userContentController = WKUserContentController().also { controller ->
-                    controller.addUserScript(
-                        WKUserScript(
-                            "window.injected = (window.injected || 0) + 1",
-                            WKUserScript.WKUserScriptInjectionTime.atDocumentEnd
-                        )
-                    )
+                    controller.addUserScript(WKUserScript(source, WKUserScript.WKUserScriptInjectionTime.atDocumentEnd))
                 }
             }
         }
@@ -55,6 +56,7 @@ class WKWebViewTest {
 
     @Test
     fun theScriptRunsExactlyOnceOnTheLoadedPage() {
+        configure()
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         Thread.sleep(500)
@@ -63,6 +65,7 @@ class WKWebViewTest {
 
     @Test
     fun sameDocumentNavigationDoesNotInjectAgain() {
+        configure()
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         evaluate("location.hash = 'x'")
@@ -72,16 +75,18 @@ class WKWebViewTest {
 
     @Test
     fun aPageThatNavigatesAwayOnLoadDoesNotLeakTheScript() {
+        configure()
         onMain { webView.load(URLRequest("file:///android_asset/cocoatouch_test_web_c.html")) }
-        val onDataPage = "location.href === 'about:blank' ? String(window.__cocoatouchUserScript) : 'waiting'"
-        assertEquals("\"undefined\"", awaitResult(onDataPage, "\"undefined\""))
+        val onBlankPage = "location.href === 'about:blank' ? String(window.__cocoatouchUserScript) : 'waiting'"
+        assertEquals("\"undefined\"", awaitResult(onBlankPage, "\"undefined\""))
         Thread.sleep(500)
-        assertEquals("\"undefined\"", evaluate(onDataPage))
+        assertEquals("\"undefined\"", evaluate(onBlankPage))
         assertEquals("\"undefined\"", evaluate(countScript))
     }
 
     @Test
     fun aNavigationWithinTheLoadedOriginInjectsTheNewPageOnce() {
+        configure()
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         evaluate("document.getElementById('go').click()")
@@ -93,13 +98,44 @@ class WKWebViewTest {
 
     @Test
     fun aPageFromAnotherOriginIsNeverInjected() {
+        configure()
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         onMain { widget.loadUrl("data:text/html,<html><body>x</body></html>") }
-        val onDataPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
-        awaitResult(onDataPage, "\"undefined\"")
+        val onBlankPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
+        awaitResult(onBlankPage, "\"undefined\"")
         Thread.sleep(1000)
-        assertEquals("\"undefined\"", evaluate(onDataPage))
+        assertEquals("\"undefined\"", evaluate(onBlankPage))
+    }
+
+    @Test
+    fun aUserScriptEndingInALineCommentRuns() {
+        configure("window.injected = 1 // notify")
+        onMain { webView.load(URLRequest(pageA)) }
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
+    }
+
+    @Test
+    fun aUserScriptTopLevelConstIsVisibleToThePage() {
+        configure("const cocoatouchApi = 7; window.injected = 1")
+        onMain { webView.load(URLRequest(pageA)) }
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
+        assertEquals("\"number\"", evaluate("typeof cocoatouchApi"))
+    }
+
+    @Test
+    fun theGuardRefusesAnotherOriginInsideTheDocument() {
+        onMain {
+            widget.settings.javaScriptEnabled = true
+            webView.load(URLRequest(pageA))
+        }
+        awaitResult("document.readyState", "\"complete\"")
+        evaluate(guardedSource("https://other.test", countingSource))
+        assertEquals("\"undefined\"", evaluate(countScript))
+        evaluate(guardedSource("file://", countingSource))
+        assertEquals("\"1\"", evaluate(countScript))
+        evaluate(guardedSource("file://", countingSource))
+        assertEquals("\"1\"", evaluate(countScript))
     }
 
     private fun evaluate(script: String): String {

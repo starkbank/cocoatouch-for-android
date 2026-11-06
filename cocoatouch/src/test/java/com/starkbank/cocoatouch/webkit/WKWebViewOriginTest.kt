@@ -31,11 +31,20 @@ class WKWebViewOriginTest {
     @Test
     fun fileAndDataHaveAnEmptyHost() {
         assertEquals("file://", originOf("file:///android_asset/a.html"))
+        assertEquals("file://", originOf("file://localhost/x"))
         assertEquals("data://", originOf("data:text/html,x"))
     }
 
     @Test
     fun anOverlongLabelDoesNotThrow() {
         assertEquals("https://${"a".repeat(64)}.com", originOf("https://${"A".repeat(64)}.com/"))
+    }
+
+    @Test
+    fun thePortIsParsedAsANumber() {
+        assertEquals("https://a", originOf("https://a:/x"))
+        assertEquals("https://a", originOf("https://a:0443/x"))
+        assertEquals("https://a:8443", originOf("https://a:08443/"))
+        assertEquals("", originOf("https://a:x/"))
     }
 }
