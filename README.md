@@ -237,6 +237,8 @@ Requirements of the consuming app:
 - `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider.
 - `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.
 - `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults`, `NotificationCenter` and `UIPasteboard`, exists from process start because the library initialises itself through a content provider, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups.
+- A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
+- `android:configChanges="uiMode"` on the `UIStoryboard` activity, so a dark-mode switch updates `UITraitCollection` without recreating the activity (recreation resets navigation, see CT-16).
 - Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
 - `UIApplication.appearance` sets the theme; a change applies to views created afterwards, and presenting the screen again is up to the app.
 - Use `@id/cocoatouch_tab_container` in tab layouts.

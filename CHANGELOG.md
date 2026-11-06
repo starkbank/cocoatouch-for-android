@@ -63,6 +63,8 @@ Compared with 0.0.1, the only public predecessor:
 - An exception thrown by an `@IBAction` handler propagates instead of being printed, so a throwing handler now crashes the app visibly.
 - `@IBOutlet` and `@IBAction` bindings declared in base classes are inherited, and the `@IBAction` sender is the widget that was clicked; 0.0.1 read only the leaf class and passed a fresh `UIButton`.
 - `NotificationCenter.addObserver` returns a `NotificationObserver` and `removeObserver(observer)` removes exactly that one; the no-argument `removeObserver()` is deprecated and removes every registered observer, where 0.0.1 kept a single slot, so it unregistered only the last observer and leaked the others.
+- A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
+- `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
 
 ### Known issues
 Each one is pinned by a test that fails when the behaviour changes.
