@@ -49,6 +49,7 @@ class WKWebViewTest {
 
     @After
     fun close() {
+        onMain { widget.destroy() }
         scenario.close()
     }
 
@@ -61,9 +62,28 @@ class WKWebViewTest {
     }
 
     @Test
+    fun sameDocumentNavigationDoesNotInjectAgain() {
+        onMain { webView.load(URLRequest(pageA)) }
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
+        evaluate("location.hash = 'x'")
+        Thread.sleep(500)
+        assertEquals("\"1\"", evaluate(countScript))
+    }
+
+    @Test
+    fun aPageThatNavigatesAwayOnLoadDoesNotLeakTheScript() {
+        onMain { webView.load(URLRequest("file:///android_asset/cocoatouch_test_web_c.html")) }
+        val onDataPage = "location.href === 'about:blank' ? String(window.__cocoatouchUserScript) : 'waiting'"
+        assertEquals("\"undefined\"", awaitResult(onDataPage, "\"undefined\""))
+        Thread.sleep(500)
+        assertEquals("\"undefined\"", evaluate(onDataPage))
+        assertEquals("\"undefined\"", evaluate(countScript))
+    }
+
+    @Test
     fun aNavigationWithinTheLoadedOriginInjectsTheNewPageOnce() {
         onMain { webView.load(URLRequest(pageA)) }
-        awaitResult(countScript, "\"1\"")
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         evaluate("document.getElementById('go').click()")
         val onPageB = "location.pathname.endsWith('web_b.html') ? $countScript : 'waiting'"
         assertEquals("\"1\"", awaitResult(onPageB, "\"1\""))
@@ -74,7 +94,7 @@ class WKWebViewTest {
     @Test
     fun aPageFromAnotherOriginIsNeverInjected() {
         onMain { webView.load(URLRequest(pageA)) }
-        awaitResult(countScript, "\"1\"")
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         onMain { widget.loadUrl("data:text/html,<html><body>x</body></html>") }
         val onDataPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
         awaitResult(onDataPage, "\"undefined\"")
