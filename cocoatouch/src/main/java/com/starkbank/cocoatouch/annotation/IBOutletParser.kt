@@ -28,8 +28,9 @@ object IBOutletParser {
     // Walks up to UIResponder so a base controller's outlets are bound, subclass first. A field whose name a subclass
     // outlet already declared is shadowed and is bound only when its id exists in the layout: field names survive R8
     // through the consumer rules but getter names do not, so overriding cannot be detected from the accessors, and a
-    // Kotlin override reads through a virtual accessor, which makes the subclass field the one in use. The result is
-    // constant per class, so it is built once and made accessible once
+    // Kotlin override reads through a virtual accessor, which makes the subclass field the one in use, or a private
+    // base field sits next to a subclass field of the same name. The result is constant per class, so it is built
+    // once and made accessible once
     private fun walk(type: Class<*>): List<OutletField> {
         val outletFields = ArrayList<OutletField>()
         val namesSeen = HashSet<String>()

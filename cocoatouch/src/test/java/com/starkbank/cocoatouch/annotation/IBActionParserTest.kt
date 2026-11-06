@@ -2,6 +2,7 @@ package com.starkbank.cocoatouch.annotation
 
 import android.content.Context
 import android.widget.FrameLayout
+import com.starkbank.cocoatouch.nullOf
 import com.starkbank.cocoatouch.compatibility.DefaultActions
 import com.starkbank.cocoatouch.uikit.UIButton
 import com.starkbank.cocoatouch.uikit.UIResponder
@@ -86,10 +87,6 @@ class OverridingActionFixture : ParentActionFixture() {
 
     @IBAction(1) override fun tap(sender: UIButton) {}
 }
-
-// The android.jar stubs ignore their Context, and Kotlin forbids a literal null for a Java non-null parameter
-@Suppress("UNCHECKED_CAST")
-private fun <T> nullOf(): T = null as T
 
 class IBActionParserTest {
 

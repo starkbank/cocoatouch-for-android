@@ -2,12 +2,14 @@ package com.starkbank.cocoatouch.annotation
 
 import android.content.Context
 import android.widget.FrameLayout
+import com.starkbank.cocoatouch.nullOf
 import com.starkbank.cocoatouch.uikit.UILabel
-import com.starkbank.cocoatouch.uikit.UISwitch
 import com.starkbank.cocoatouch.uikit.UIResponder
+import com.starkbank.cocoatouch.uikit.UISwitch
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -75,11 +77,25 @@ class IsChild : IsBase() {
     @IBOutlet(2) override var isEnabledSwitch: UISwitch? = null
 }
 
+open class GrandparentOutletFixture : UIViewController() {
+
+    @IBOutlet(1) open var label: UILabel? = null
+}
+
+open class MiddleOutletFixture : GrandparentOutletFixture() {
+
+    @IBOutlet(2) override var label: UILabel? = null
+}
+
+class GrandchildOutletFixture : MiddleOutletFixture() {
+
+    @IBOutlet(3) override var label: UILabel? = null
+}
+
 class SingleOutletFixture : UIViewController() {
 
     @IBOutlet(1) lateinit var label: UILabel
 }
-
 
 class IBOutletParserTest {
 
@@ -117,6 +133,15 @@ class IBOutletParserTest {
     }
 
     @Test
+    fun onlyTheMostDerivedOutletIsUnshadowedAcrossThreeLevels() {
+        val entries = IBOutletParser.outletFields(GrandchildOutletFixture::class.java)
+        assertEquals(3, entries.size)
+        assertFalse(entries.single { it.field.declaringClass == GrandchildOutletFixture::class.java }.isShadowed)
+        assertTrue(entries.single { it.field.declaringClass == MiddleOutletFixture::class.java }.isShadowed)
+        assertTrue(entries.single { it.field.declaringClass == GrandparentOutletFixture::class.java }.isShadowed)
+    }
+
+    @Test
     fun anUnshadowedOutletWhoseIdIsAbsentThrows() {
         val fixture = SingleOutletFixture()
         fixture.view = UIView().apply { widget = FrameLayout(nullOf<Context>()) }
@@ -143,11 +168,7 @@ class IBOutletParserTest {
     private fun assertShadowsParent(child: Class<*>, parent: Class<*>, name: String) {
         val entries = IBOutletParser.outletFields(child).filter { it.field.name == name }
         assertEquals(2, entries.size)
-        assertEquals(false, entries.single { it.field.declaringClass == child }.isShadowed)
-        assertEquals(true, entries.single { it.field.declaringClass == parent }.isShadowed)
+        assertFalse(entries.single { it.field.declaringClass == child }.isShadowed)
+        assertTrue(entries.single { it.field.declaringClass == parent }.isShadowed)
     }
 }
-
-
-@Suppress("UNCHECKED_CAST")
-private fun <T> nullOf(): T = null as T
