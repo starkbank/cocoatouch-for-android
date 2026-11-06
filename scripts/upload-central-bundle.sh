@@ -18,6 +18,10 @@ case "$name" in
     ''|*[!A-Za-z0-9._-]*) echo "deployment name must match [A-Za-z0-9._-]"; exit 2 ;;
 esac
 
+case "$version" in
+    ''|*[!A-Za-z0-9.-]*) echo "version must match [A-Za-z0-9.-]"; exit 2 ;;
+esac
+
 token=$(printf '%s:%s' "$CENTRAL_USERNAME" "$CENTRAL_PASSWORD" | base64 | tr -d '\n')
 echo "::add-mask::$token"
 

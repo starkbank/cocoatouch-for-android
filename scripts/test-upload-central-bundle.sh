@@ -78,7 +78,7 @@ run() {
     rm -f "$work/calls" "$work/pollCount" "$work/summary" "$work/stdins" "$work/argvs"
     : > "$work/summary"
     code=0
-    PATH="$work/bin:$PATH" CENTRAL_POLL_ATTEMPTS=$attemptCount sh "$script" "$work/bundle.zip" "${deploymentName:-cocoatouch-test}" "$mode" 1.2.3 > "$work/out" 2> "$work/err" || code=$?
+    PATH="$work/bin:$PATH" CENTRAL_POLL_ATTEMPTS=$attemptCount sh "$script" "$work/bundle.zip" "${deploymentName:-cocoatouch-test}" "$mode" "${deploymentVersion:-1.2.3}" > "$work/out" 2> "$work/err" || code=$?
     [ "$code" -eq "$expectedCode" ] || fail "exit $code, expected $expectedCode"
 }
 
@@ -186,6 +186,12 @@ run badName keep 2 3
 deploymentName=
 [ ! -s "$work/calls" ] || fail "curl called for a bad name"
 echo "ok: badName"
+
+deploymentVersion='1.2.3&name=other'
+run badVersion keep 2 3
+deploymentVersion=
+[ ! -s "$work/calls" ] || fail "curl called for a bad version"
+echo "ok: badVersion"
 
 run badMode purge 2 3
 expectSummary ""
