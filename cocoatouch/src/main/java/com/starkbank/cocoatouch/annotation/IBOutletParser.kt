@@ -4,62 +4,64 @@ import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
+
+
+internal class OutletField(val field: Field, val isShadowed: Boolean)
 
 
 object IBOutletParser {
 
-    private val fieldsByType = ConcurrentHashMap<Class<*>, List<Field>>()
+    private val fieldsByType = ConcurrentHashMap<Class<*>, List<OutletField>>()
 
     @InternalCocoaTouchApi
     fun parse(controller: UIResponder) {
-        for (field in outletFields(controller.javaClass)) {
-            parse(field, controller)
+        for (outletField in outletFields(controller.javaClass)) {
+            parse(outletField, controller)
         }
     }
 
-    internal fun outletFields(type: Class<*>): List<Field> {
+    internal fun outletFields(type: Class<*>): List<OutletField> {
         return fieldsByType.computeIfAbsent(type) { walk(it) }
     }
 
-    // Walks up to UIResponder so a base controller's outlets are bound. A field is keyed by its declaring class only when
-    // it is private and has no non-private getter: a Kotlin property always has a private backing field, but one with a
-    // getter can be overridden, so the subclass property replaces it by name. The result is constant per class, so it is
-    // built once and made accessible once
-    private fun walk(type: Class<*>): List<Field> {
-        val fieldsByKey = LinkedHashMap<Pair<Class<*>?, String>, Field>()
+    // Walks up to UIResponder so a base controller's outlets are bound, subclass first. A field whose name a subclass
+    // outlet already declared is shadowed and is bound only when its id exists in the layout: field names survive R8
+    // through the consumer rules but getter names do not, so overriding cannot be detected from the accessors, and a
+    // Kotlin override reads through a virtual accessor, which makes the subclass field the one in use. The result is
+    // constant per class, so it is built once and made accessible once
+    private fun walk(type: Class<*>): List<OutletField> {
+        val outletFields = ArrayList<OutletField>()
+        val namesSeen = HashSet<String>()
         var current: Class<*>? = type
         while (current != null && current != UIResponder::class.java) {
+            val declaredHere = ArrayList<String>()
             for (field in current.declaredFields) {
                 if (!field.isAnnotationPresent(IBOutlet::class.java)) continue
                 field.isAccessible = true
-                val owner = if (isOwnedByItsClass(field)) current else null
-                fieldsByKey.putIfAbsent(Pair(owner, field.name), field)
+                outletFields.add(OutletField(field, field.name in namesSeen))
+                declaredHere.add(field.name)
             }
+            namesSeen.addAll(declaredHere)
             current = current.superclass
         }
-        return fieldsByKey.values.toList()
+        return outletFields
     }
 
-    private fun isOwnedByItsClass(field: Field): Boolean {
-        if (!Modifier.isPrivate(field.modifiers)) return false
-        val getterName = "get" + field.name.replaceFirstChar { it.uppercase() }
-        return field.declaringClass.declaredMethods.none {
-            !Modifier.isPrivate(it.modifiers) && (it.name == getterName || it.name.startsWith("$getterName$"))
-        }
-    }
-
-    private fun parse(field: Field, controller: UIResponder) {
+    private fun parse(outletField: OutletField, controller: UIResponder) {
+        val field = outletField.field
         val outlet = field.getAnnotation(IBOutlet::class.java)!!
         val root = rootView(controller)
             ?: throw IllegalStateException(
                 "@IBOutlet ${field.name} (${outlet.value}) bound before ${controller.javaClass.simpleName} has a view"
             )
-        val view: View = root.findViewById(outlet.value)
-            ?: throw IllegalStateException(
+        val view: View? = root.findViewById(outlet.value)
+        if (view == null && outletField.isShadowed) return
+        if (view == null) {
+            throw IllegalStateException(
                 "@IBOutlet ${field.name} (${outlet.value}) not found in ${controller.javaClass.simpleName}"
             )
+        }
         val responder = field.type.newInstance() as UIResponder
         responder.widget = view
         field[controller] = responder

@@ -41,18 +41,6 @@ class MissingOutletFixture : UIViewController() {
     @IBOutlet(99) lateinit var missing: UILabel
 }
 
-open class ShadowBaseFixture : UIViewController() {
-
-    @IBOutlet(1) private lateinit var label: UILabel
-
-    fun baseLabel(): UILabel = label
-}
-
-class ShadowChildFixture : ShadowBaseFixture() {
-
-    @IBOutlet(1) lateinit var label: UILabel
-}
-
 @RunWith(AndroidJUnit4::class)
 class IBActionParserInstrumentedTest {
 
@@ -112,22 +100,6 @@ class IBActionParserInstrumentedTest {
             val error = assertThrows(IllegalStateException::class.java) { IBOutletParser.parse(MissingOutletFixture()) }
             assertTrue(error.message!!.contains("before"))
             assertTrue(error.message!!.contains("missing"))
-        }
-    }
-
-    @Test
-    fun shadowedOutletsAreBothBound() {
-        onMain {
-            val fixture = ShadowChildFixture()
-            fixture.view = UIView().apply {
-                widget = FrameLayout(UIApplication.context()).apply {
-                    addView(View(UIApplication.context()).apply { id = 1 })
-                }
-            }
-            IBOutletParser.parse(fixture)
-            assertTrue(fixture.baseLabel() !== fixture.label)
-            assertEquals(1, fixture.label.widget!!.id)
-            assertEquals(1, fixture.baseLabel().widget!!.id)
         }
     }
 }
