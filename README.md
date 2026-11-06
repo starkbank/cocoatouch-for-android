@@ -231,6 +231,8 @@ implementation 'com.starkbank:cocoatouch:<version>'
 Requirements of the consuming app:
 
 - `minSdk` 25.
+- `compileSdk` 35 or higher (androidx.core 1.15.0 declares minCompileSdk 35).
+- Kotlin 2.1 or higher (the artifact's kotlin-stdlib is 2.2.21, and a compiler reads metadata at most one minor version ahead).
 - `android.nonFinalResIds=false` in `gradle.properties`, so `@IBOutlet(R.id.x)` accepts the ids.
 - `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider.
 - `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.

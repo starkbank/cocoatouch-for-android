@@ -10,6 +10,8 @@ PATCH for backwards-compatible fixes.
 ## [Unreleased]
 
 ### Added
+First release on Maven Central; every interface the library ships:
+
 - `UIApplication`
 - `UIViewController`
 - `UINavigationController`
