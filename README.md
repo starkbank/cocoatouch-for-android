@@ -238,7 +238,7 @@ Requirements of the consuming app:
 - Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
 - `UIApplication.appearance` sets the theme; a change applies to views created afterwards, and presenting the screen again is up to the app.
 - Use `@id/cocoatouch_tab_container` in tab layouts.
-- Use `@OptIn(InternalCocoaTouchApi::class)` for the Android access.
+- Use `@OptIn(InternalCocoaTouchApi::class)` (`import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi`) to read `UIApplication.activity`/`storyboard` and the other members marked `@InternalCocoaTouchApi`.
 
 6.2 - Create file: MainStoryboard.kt
 
@@ -363,7 +363,7 @@ You can set any ViewController you want.
 | `UITextField` | `UITextField` | yes | `setText` is silent |
 | `BackEditText` | none | Android-specific | - |
 | `UITextFieldDelegate` | `UITextFieldDelegate` | yes | `shouldChange` cannot veto (CT-04) |
-| `UIKeyInput` | `UIKeyInput` | yes | - |
+| `UIKeyInput` | `UIKeyInput` | yes | A class here, a protocol on Apple |
 | `UISearchBar` | `UISearchBar` | yes | No `searchController`; cursor tint and handles only from API 29 |
 | `UISearchBarDelegate` | `UISearchBarDelegate` | yes | - |
 | `UIProgressView` | `UIProgressView` | type only, no progress API | - |
@@ -418,7 +418,12 @@ You can set any ViewController you want.
 | `Frame` | `CGRect` | yes | - |
 | `IBAction` | `@IBAction` | yes | Validated at bind |
 | `IBOutlet` | `@IBOutlet` | yes | Takes an `R.id` |
-| `Optional` | `Optional` | yes | - |
+| `Optional` | none | Android-specific | The library's `@Optional` annotation on functions and accessors, not Swift's `Optional` type |
+| `IBActionParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `IBOutletParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `BackPressedParser` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `DefaultActions` | none | yes | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `WKUserScript.WKUserScriptInjectionTime` | `WKUserScriptInjectionTime` | yes | Nested enum here |
 | `InternalCocoaTouchApi` | none | Android-specific | Opt-in marker for the Android access |
 
 ### 7. Add new UIViewControllers or UITableViewCells to your project:
