@@ -68,8 +68,7 @@ open class UINavigationController: UIViewController() {
         if (this.pushViewControllers.count() == 1) {
             return
         }
-        val controllerToRemove = lastViewController(this.pushViewControllers)
-        this.pushViewControllers.removeObject(controllerToRemove!!)
+        this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
         val activity = sharedApplication().activity()
         activity.supportFragmentManager.popBackStack()
@@ -93,8 +92,7 @@ open class UINavigationController: UIViewController() {
         sharedApplication().isNotificationsEnabled = true
         val lastIndex = lastIndexOfArray(this.pushViewControllers)
         for (i in lastIndex downTo 1) {
-            val controllerToRemove = this.pushViewControllers.objectAtIndex(i)
-            this.pushViewControllers.removeObject(controllerToRemove)
+            this.pushViewControllers.removeObjectAtIndex(i)
         }
         val activity = sharedApplication().activity()
         activity.supportFragmentManager.popBackStack(
@@ -165,8 +163,7 @@ open class UINavigationController: UIViewController() {
         if (this.pushViewControllers.count() == 1) {
             return
         }
-        val controllerToRemove = lastViewController(this.pushViewControllers)
-        this.pushViewControllers.removeObject(controllerToRemove!!)
+        this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
         val activity = sharedApplication().activity()
         activity.supportFragmentManager.popBackStack()

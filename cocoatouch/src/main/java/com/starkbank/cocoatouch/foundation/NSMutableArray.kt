@@ -20,6 +20,6 @@ class NSMutableArray<NSObject> : NSArray<NSObject>() {
     }
 
     fun removeObject(`object`: NSObject) {
-        array.remove(`object`)
+        array.removeAll { it == `object` }
     }
 }
