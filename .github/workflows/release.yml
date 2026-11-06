@@ -15,7 +15,18 @@ permissions:
 concurrency: release
 
 jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: sh scripts/check-release-environment.sh "$GITHUB_REPOSITORY" maven-central
+        env:
+          GH_TOKEN: ${{ github.token }}
   publish:
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: maven-central
