@@ -7,6 +7,8 @@ import com.starkbank.cocoatouch.uikit.UIFragment
 import com.starkbank.cocoatouch.uikit.UINavigationController
 import com.starkbank.cocoatouch.uikit.UIStoryboard
 import com.starkbank.cocoatouch.uikit.UIViewController
+import org.junit.Assert.fail
+import java.lang.ref.WeakReference
 
 
 class TestStoryboard : UIStoryboard() {
@@ -75,6 +77,25 @@ fun storyboard(activity: UIActivity): UIStoryboard {
 
 fun rootController(activity: UIActivity): RecordingViewController {
     return (activity.supportFragmentManager.fragments.first() as UIFragment).viewController as RecordingViewController
+}
+
+// A reference is cleared on a GC cycle the VM schedules, so the test keeps asking for one, with allocation pressure,
+// instead of sleeping a fixed time
+fun assertCollected(reference: WeakReference<*>) {
+    repeat(20) {
+        if (reference.get() == null) return
+        allocatePressure()
+        Runtime.getRuntime().gc()
+        Runtime.getRuntime().runFinalization()
+        Thread.sleep(50)
+        if (reference.get() == null) return
+    }
+    fail("${reference.get()} still reachable after 20 GC rounds")
+}
+
+private fun allocatePressure() {
+    val pressure = ArrayList<ByteArray>()
+    repeat(3) { pressure.add(ByteArray(4 shl 20)) }
 }
 
 // An assertion that fails on the main thread would crash the process instead of failing the test

@@ -15,6 +15,7 @@ import com.starkbank.cocoatouch.PlainActivity
 import com.starkbank.cocoatouch.PushedViewController
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.TranslucentActivity
+import com.starkbank.cocoatouch.assertCollected
 import com.starkbank.cocoatouch.foundation.NSMutableArray
 import com.starkbank.cocoatouch.foundation.NotificationCenter
 import com.starkbank.cocoatouch.foundation.NotificationObserver
@@ -349,17 +350,6 @@ class UIApplicationLifetimeTest {
         finishAndAwaitDestroyed(first)
         finishAndAwaitDestroyed(top)
         return WeakReference(top)
-    }
-
-    private fun assertCollected(reference: WeakReference<*>) {
-        var attempts = 0
-        while (reference.get() != null && attempts < 50) {
-            Runtime.getRuntime().gc()
-            System.runFinalization()
-            Thread.sleep(100)
-            attempts++
-        }
-        assertNull("still reachable after $attempts collections", reference.get())
     }
 
     // A worker's stack dies with it, so no stale slot of the test thread can keep an activity alive

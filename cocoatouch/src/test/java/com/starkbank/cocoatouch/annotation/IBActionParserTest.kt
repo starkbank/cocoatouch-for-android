@@ -146,7 +146,7 @@ class IBActionParserTest {
     }
 
     @Test
-    fun anySenderTypeBinds() {
+    fun anySenderTypePassesTheSenderCheck() {
         val fixture = AnySenderFixture()
         fixture.view = UIView().apply { widget = FrameLayout(nullOf<Context>()) }
         val error = assertThrows(IllegalStateException::class.java) { IBActionParser.parse(fixture) }

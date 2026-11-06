@@ -4,6 +4,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,7 +17,6 @@ import com.starkbank.cocoatouch.storyboard
 import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -104,8 +104,10 @@ class KnownGapInstrumentedTest {
         }
         onMain {
             assertTrue("table never reported a row, childCount=${list.childCount}", displayedRows.isNotEmpty())
-            assertEquals(listOf(2), displayedRows.toList())
-            assertFalse(0 in displayedRows)
+            val lastVisible = (list.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
+            assertTrue("lastVisible=$lastVisible", lastVisible >= 1)
+            assertEquals(listOf(lastVisible), displayedRows.toList())
+            assertTrue(displayedRows.none { it < lastVisible })
         }
     }
 

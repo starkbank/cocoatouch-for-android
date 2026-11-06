@@ -6,11 +6,11 @@ import androidx.core.widget.addTextChangedListener
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.assertCollected
 import com.starkbank.cocoatouch.onMain
 import java.lang.ref.WeakReference
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
@@ -164,12 +164,6 @@ class UITextFieldContractTest {
             field.setDelegate(dropped)
             field.setDelegate(b)
         }
-        repeat(10) {
-            if (weak!!.get() != null) {
-                Runtime.getRuntime().gc()
-                Thread.sleep(50)
-            }
-        }
-        assertNull(weak!!.get())
+        assertCollected(weak!!)
     }
 }
