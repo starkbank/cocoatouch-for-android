@@ -40,6 +40,16 @@ class ShadowChild : ShadowBase() {
     @IBOutlet(1) lateinit var label: UILabel
 }
 
+open class NullableBase : UIViewController() {
+
+    @IBOutlet(1) open var label: UILabel? = null
+}
+
+class NullableChild : NullableBase() {
+
+    @IBOutlet(2) override var label: UILabel? = null
+}
+
 class IBOutletParserTest {
 
     @Test
@@ -64,6 +74,13 @@ class IBOutletParserTest {
             setOf(ShadowBase::class.java, ShadowChild::class.java),
             labels.map { it.declaringClass }.toSet()
         )
+    }
+
+    @Test
+    fun anOverriddenNullablePropertyIsBoundOnlyOnTheSubclass() {
+        val labels = IBOutletParser.outletFields(NullableChild::class.java).filter { it.name == "label" }
+        assertEquals(1, labels.size)
+        assertEquals(NullableChild::class.java, labels.first().declaringClass)
     }
 
     @Test

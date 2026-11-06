@@ -2,6 +2,7 @@ package com.starkbank.cocoatouch.foundation
 
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -39,18 +40,6 @@ class NotificationCenterTest {
         NotificationCenter.removeObserver(yToken)
     }
 
-    @Suppress("DEPRECATION")
-    @Test
-    fun removeObserverWithoutArgumentRemovesEveryObserver() {
-        NotificationCenter.addObserver({ xCalls++ }, "a")
-        NotificationCenter.addObserver({ yCalls++ }, "b")
-        NotificationCenter.removeObserver()
-        NotificationCenter.postNotification("a")
-        NotificationCenter.postNotification("b")
-        waitForMain()
-        assertEquals(0, xCalls + yCalls)
-    }
-
     @Test
     fun removingTheSameObserverTwiceIsHarmless() {
         val token = NotificationCenter.addObserver({ xCalls++ }, "a")
@@ -62,7 +51,6 @@ class NotificationCenterTest {
     }
 
     private fun waitForMain() {
-        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-        Thread.sleep(300)
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
     }
 }

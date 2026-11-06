@@ -3,8 +3,8 @@ package com.starkbank.cocoatouch.compatibility
 import android.app.Activity
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
-import com.starkbank.cocoatouch.uikit.UIApplication
 import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
+import com.starkbank.cocoatouch.uikit.UIApplication
 
 @InternalCocoaTouchApi
 class UIKeyInput {

@@ -34,7 +34,10 @@ class NotificationCenter {
             LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(observer.receiver)
         }
 
-        @Deprecated("Remove the observer you added", ReplaceWith("removeObserver(observer)"))
+        @Deprecated(
+            "Remove the observer you added with the token addObserver returned",
+            level = DeprecationLevel.ERROR
+        )
         fun removeObserver() {
             for (observer in observers) {
                 removeObserver(observer)

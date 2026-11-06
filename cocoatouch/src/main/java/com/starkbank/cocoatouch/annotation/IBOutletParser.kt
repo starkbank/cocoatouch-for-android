@@ -23,9 +23,10 @@ object IBOutletParser {
         return fieldsByType.computeIfAbsent(type) { walk(it) }
     }
 
-    // Walks up to UIResponder so a base controller's outlets are bound. A private field is keyed by its declaring class
-    // because a subclass field of the same name does not replace it; any other field is an override, so the subclass wins
-    // The result is constant per class, so it is built once and made accessible once
+    // Walks up to UIResponder so a base controller's outlets are bound. A field is keyed by its declaring class only when
+    // it is private and has no non-private getter: a Kotlin property always has a private backing field, but one with a
+    // getter can be overridden, so the subclass property replaces it by name. The result is constant per class, so it is
+    // built once and made accessible once
     private fun walk(type: Class<*>): List<Field> {
         val fieldsByKey = LinkedHashMap<Pair<Class<*>?, String>, Field>()
         var current: Class<*>? = type
@@ -33,12 +34,18 @@ object IBOutletParser {
             for (field in current.declaredFields) {
                 if (!field.isAnnotationPresent(IBOutlet::class.java)) continue
                 field.isAccessible = true
-                val owner = if (Modifier.isPrivate(field.modifiers)) current else null
+                val owner = if (isOwnedByItsClass(field)) current else null
                 fieldsByKey.putIfAbsent(Pair(owner, field.name), field)
             }
             current = current.superclass
         }
         return fieldsByKey.values.toList()
+    }
+
+    private fun isOwnedByItsClass(field: Field): Boolean {
+        if (!Modifier.isPrivate(field.modifiers)) return false
+        val getterName = "get" + field.name.replaceFirstChar { it.uppercase() }
+        return field.declaringClass.declaredMethods.none { it.name == getterName && !Modifier.isPrivate(it.modifiers) }
     }
 
     private fun parse(field: Field, controller: UIResponder) {

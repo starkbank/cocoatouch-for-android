@@ -7,7 +7,7 @@ import android.net.Uri
 import com.starkbank.cocoatouch.uikit.UIApplication
 
 
-class CocoaTouchInitializer : ContentProvider() {
+internal class CocoaTouchInitializer : ContentProvider() {
 
     override fun onCreate(): Boolean {
         UIApplication.initialize(context!!)
