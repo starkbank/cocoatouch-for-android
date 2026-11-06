@@ -46,6 +46,7 @@ class DispatchGroupTest {
         repeat(2) { group.notify(DispatchQueue.global) { runs.incrementAndGet(); latch.countDown() } }
         group.leave()
         assertTrue(latch.await(1, SECONDS))
+        Thread.sleep(200)
         assertEquals(2, runs.get())
     }
 
@@ -69,6 +70,38 @@ class DispatchGroupTest {
 
     @Test
     fun unbalancedLeaveThrows() {
-        assertThrows(IllegalStateException::class.java) { DispatchGroup().leave() }
+        val error = assertThrows(IllegalStateException::class.java) { DispatchGroup().leave() }
+        assertEquals("DispatchGroup.leave() called more times than enter()", error.message)
+    }
+
+    @Test
+    fun blockRunsOnceAcrossCycles() {
+        group.enter()
+        group.leave()
+        group.enter()
+        group.notify(DispatchQueue.main) { runs.incrementAndGet(); latch.countDown() }
+        group.leave()
+        assertTrue(latch.await(1, SECONDS))
+        Thread.sleep(200)
+        assertEquals(1, runs.get())
+    }
+
+    @Test
+    fun leaveAfterCompletionThrows() {
+        group.enter()
+        group.leave()
+        val error = assertThrows(IllegalStateException::class.java) { group.leave() }
+        assertEquals("DispatchGroup.leave() called more times than enter()", error.message)
+    }
+
+    @Test
+    fun notifyRacingLeaveDeliversEveryBlock() {
+        val latch = CountDownLatch(50)
+        repeat(50) {
+            group.enter()
+            Thread { group.leave() }.start()
+            group.notify(DispatchQueue.global) { latch.countDown() }
+        }
+        assertTrue(latch.await(5, SECONDS))
     }
 }

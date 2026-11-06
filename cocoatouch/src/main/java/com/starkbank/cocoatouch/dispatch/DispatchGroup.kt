@@ -5,6 +5,7 @@ import android.os.Looper
 import java.util.concurrent.Executors
 
 private val globalExecutor = Executors.newCachedThreadPool()
+private val mainHandler = Handler(Looper.getMainLooper())
 
 class DispatchGroup {
     private var pending = 0
@@ -39,7 +40,7 @@ class DispatchGroup {
 
     private fun deliver(queue: DispatchQueue, work: () -> Unit) {
         if (queue == DispatchQueue.main) {
-            Handler(Looper.getMainLooper()).post(work)
+            mainHandler.post(work)
             return
         }
         globalExecutor.execute(work)
