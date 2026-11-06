@@ -33,6 +33,7 @@ open class UITextField : UIControl() {
 
     private var delegate: UITextFieldDelegate? = null
     private var observer: TextWatcher? = null
+    private var ignoreTextChange: Boolean = false
     private var originalBackground: Drawable? = null
 
     private fun editText(): BackEditText {
@@ -45,8 +46,15 @@ open class UITextField : UIControl() {
     }
 
     fun setText(text: String) {
-        this.editText().setText(text)
-        this.editText().setSelection(text.length)
+        // Restoring the previous value keeps a re-entrant setText from an app watcher from unlocking the outer call
+        val wasIgnoring = ignoreTextChange
+        ignoreTextChange = true
+        try {
+            this.editText().setText(text)
+            this.editText().setSelection(text.length)
+        } finally {
+            ignoreTextChange = wasIgnoring
+        }
     }
 
     fun text(): String {
@@ -91,6 +99,7 @@ open class UITextField : UIControl() {
     // Listeners
     //
     private fun addListeners() {
+        removeListeners()
         addTextListener()
         addKeyListener()
         addTouchListener()
@@ -100,6 +109,7 @@ open class UITextField : UIControl() {
 
     private fun removeListeners() {
         this.editText().removeTextChangedListener(observer)
+        observer = null
         this.editText().setOnKeyListener(null)
         this.editText().setOnTouchListener(null)
         this.editText().setOnFocusChangeListener(null)
@@ -115,21 +125,30 @@ open class UITextField : UIControl() {
     }
 
     private fun addTextListener() {
-        val delegate = delegate
+        if (observer != null)
+            return
         val textField = this
-        this.editText().addTextChangedListener(object : TextWatcher {
+        val watcher = object : TextWatcher {
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                if (ignoreTextChange)
+                    return
                 delegate?.textFieldShouldChange(textField, s, start, before, count)
             }
 
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                if (ignoreTextChange)
+                    return
                 delegate?.textFieldBeforeChange(textField, s, start, count, after)
             }
 
             override fun afterTextChanged(s: Editable) {
+                if (ignoreTextChange)
+                    return
                 delegate?.textFieldDidChange(textField)
             }
-        })
+        }
+        observer = watcher
+        this.editText().addTextChangedListener(watcher)
     }
 
     private fun addKeyListener() {
