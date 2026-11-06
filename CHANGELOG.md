@@ -86,7 +86,7 @@ Each one is pinned by a test that fails when the behaviour changes.
 - `presentViewController` of a controller created without a storyboard (outside `instantiateViewControllerWithIdentifier`) throws an NPE in `commitModal`: at the call while the activity is resumed, and at the restart when the call was queued while its state was saved (`presentingAStoryboardLessControllerWhilePausedThrowsOnRestart`).
 - A non-storyboard `UIActivity` keeps the `UIStoryboard` below it alive until the next storyboard attaches; its tables still create cells through that storyboard (`plainActivityKeepsTheFinishedStoryboardBelowIt`).
 - `popToRootViewController` also empties the pushes made inside a tab of a root `UITabBarController`, because `popBackStack(null, INCLUSIVE)` clears the whole back stack of the Activity.
-- After a push queued while the app is in the background, the fragments already on screen receive `viewDidAppear` without `viewWillAppear` on return: the queue drains in `onStart` after `super.onStart` and no longer turns `isNotificationsEnabled` on when queueing.
+- After a push queued while the app is in the background, the fragments already on screen receive `viewDidAppear` without `viewWillAppear` on return: the queue drains in `onStart` after `super.onStart`; queueing does not turn `isNotificationsEnabled` on, the transaction turns it on when it runs.
 
 ### Differences from the in-house framework this release was extracted from
 This release is extracted from the framework copy the Stark apps ship; teams moving from that copy will notice:

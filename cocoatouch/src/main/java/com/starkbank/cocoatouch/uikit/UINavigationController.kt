@@ -21,8 +21,6 @@ open class UINavigationController: UIViewController() {
     @InternalCocoaTouchApi
     var pushViewControllers = NSMutableArray<UIViewController>()
     internal var modalViewControllers = NSMutableArray<UIViewController>()
-    @InternalCocoaTouchApi
-    var pausedViewControllers: NSMutableArray<UIViewController>? = null
     internal var pausedTransactions: MutableList<() -> Unit>? = null
     internal var owner: WeakReference<UIActivity>? = null
 
@@ -66,17 +64,19 @@ open class UINavigationController: UIViewController() {
         val tabs = lastViewController(this.pushViewControllers) as? UITabBarController
         if (tabs?.popInTab(animated, null) == true) return
         if (ownerActivity() == null) return
-        //
-        // Applications is in foreground because this action was trigged by user.
-        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
-        //
-        sharedApplication().isNotificationsEnabled = true
         if (this.pushViewControllers.count() == 1) {
             return
         }
         this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
-        transactOnOwner { it.popBackStack() }
+        transactOnOwner {
+            //
+            // Applications is in foreground because this action was trigged by user.
+            // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
+            //
+            sharedApplication().isNotificationsEnabled = true
+            it.popBackStack()
+        }
 
         val lastViewController = this.pushViewControllers.lastObject()
         if(lastViewController is UITabBarController) {
@@ -90,16 +90,18 @@ open class UINavigationController: UIViewController() {
 
     open fun popToRootViewController(animated: Boolean) {
         if (ownerActivity() == null) return
-        //
-        // Applications is in foreground because this action was trigged by user.
-        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
-        //
-        sharedApplication().isNotificationsEnabled = true
         val lastIndex = lastIndexOfArray(this.pushViewControllers)
         for (i in lastIndex downTo 1) {
             this.pushViewControllers.removeObjectAtIndex(i)
         }
-        transactOnOwner { it.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE) }
+        transactOnOwner {
+            //
+            // Applications is in foreground because this action was trigged by user.
+            // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
+            //
+            sharedApplication().isNotificationsEnabled = true
+            it.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        }
 
         this.pushViewControllers.lastObject()?.viewWillAppear(animated)
     }
@@ -114,49 +116,49 @@ open class UINavigationController: UIViewController() {
         if (activity.isFinishing)
             return
 
-        //
-        // Applications is in foreground because this action was trigged by user.
-        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
-        //
-        sharedApplication().isNotificationsEnabled = true
 
         // The drain replays without animation, as the old drain forced animated = false
-        // Evaluated first: it opens the queue and the paused list that the next line fills
+        // Evaluated first: it opens the queue that the transaction below joins
         val isQueued = pausedQueue() != null
         val animates = animated && !isQueued
-        this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
         transact { commitModal(viewController, animates, addsToBackStack) }
     }
 
     open fun dismissModalViewControllerAnimated(animated: Boolean) {
         if (ownerActivity() == null) return
-        //
-        // Applications is in foreground because this action was trigged by user.
-        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
-        //
-        sharedApplication().isNotificationsEnabled = true
         if (this.pushViewControllers.count() == 1) {
             return
         }
         this.pushViewControllers.removeObjectAtIndex(this.pushViewControllers.count() - 1)
 
-        transactOnOwner { it.popBackStack() }
+        transactOnOwner {
+            //
+            // Applications is in foreground because this action was trigged by user.
+            // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
+            //
+            sharedApplication().isNotificationsEnabled = true
+            it.popBackStack()
+        }
 
         this.pushViewControllers.lastObject()?.viewWillAppear(animated)
     }
 
     internal fun presentPushViewController(viewController: UIViewController, animated: Boolean) {
-        // Evaluated first: it opens the queue and the paused list that the next line fills
+        // Evaluated first: it opens the queue that the transaction below joins
         val isQueued = pausedQueue() != null
         val animates = animated && !isQueued
-        this.pausedViewControllers?.addObject(viewController)
         val addsToBackStack = pushViewControllers.count() > 1
         transact { commitPush(viewController, animates, addsToBackStack) }
     }
 
     private fun commitModal(viewController: UIViewController, animated: Boolean, addsToBackStack: Boolean) {
         val activity = ownerActivity() ?: return
+        //
+        // Applications is in foreground because this action was trigged by user.
+        // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
+        //
+        sharedApplication().isNotificationsEnabled = true
         val storyboard = viewController.storyboard!!
         val fragment = viewController.view!!.fragment()!!
 
@@ -195,7 +197,6 @@ open class UINavigationController: UIViewController() {
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
         //
         sharedApplication().isNotificationsEnabled = true
-
         val storyboard = viewController.storyboard
         val fragment = viewController.view?.fragment()
 
@@ -246,7 +247,6 @@ open class UINavigationController: UIViewController() {
         // Only UIActivity drains a queue, and only its own controller's
         if (this.owner == null) return null
         if (ownerActivity()?.supportFragmentManager?.isStateSaved != true) return null
-        this.pausedViewControllers = this.pausedViewControllers ?: NSMutableArray()
         return mutableListOf<() -> Unit>().also { this.pausedTransactions = it }
     }
 

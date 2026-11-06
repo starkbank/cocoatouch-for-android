@@ -157,8 +157,6 @@ open class UIActivity: AppCompatActivity() {
     }
 
     private fun startPausedTransitions() {
-        this.navigationController.pausedViewControllers = this.navigationController.pausedViewControllers
-            ?: NSMutableArray<UIViewController>()
         this.navigationController.pausedTransactions = this.navigationController.pausedTransactions ?: mutableListOf()
     }
 
@@ -166,7 +164,6 @@ open class UIActivity: AppCompatActivity() {
         val transactions = this.navigationController.pausedTransactions ?: return
         // Detach first: a transaction that re-queues while the list is non-null would grow it during the iteration
         this.navigationController.pausedTransactions = null
-        this.navigationController.pausedViewControllers = null
         for (transaction in transactions) {
             transaction()
         }

@@ -53,13 +53,13 @@ open class UITabBarController : UIViewController(), UITabBarDelegate {
     }
 
     open fun presentViewController(viewController: UIViewController, animated: Boolean = false) {
-        UIApplication.sharedApplication().isNotificationsEnabled = true
         viewController.navigationController = navigationController
         viewController.tabBarController = this
         viewController.setParentViewController(this.selectedViewController)
         viewController.view?.fragment()?.let { fragment ->
             viewController.setParentViewController(this)
             transactOnOwner {
+                UIApplication.sharedApplication().isNotificationsEnabled = true
                 val fragmentTransaction = it.beginTransaction()
                 if (animated) {
                     fragmentTransaction.setCustomAnimations(

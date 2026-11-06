@@ -86,6 +86,45 @@ class PausedTransitionsTest {
     }
 
     @Test
+    fun aPopQueuedWhileStoppedTurnsNotificationsOnOnlyWhenItRuns() {
+        val activity = launchedActivity()
+        pushAndSettle(activity, 1)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).popViewController(false) }
+        assertFalse(UIApplication.isNotificationsEnabled)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { it.supportFragmentManager.executePendingTransactions() }
+        assertTrue(UIApplication.isNotificationsEnabled)
+    }
+
+    @Test
+    fun aPresentQueuedWhileStoppedTurnsNotificationsOnOnlyWhenItRuns() {
+        val activity = launchedActivity()
+        val modal = pushedController(activity)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).presentViewController(modal, false) }
+        assertFalse(UIApplication.isNotificationsEnabled)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { it.supportFragmentManager.executePendingTransactions() }
+        assertTrue(UIApplication.isNotificationsEnabled)
+    }
+
+    @Test
+    fun aDismissQueuedWhileStoppedTurnsNotificationsOnOnlyWhenItRuns() {
+        val activity = launchedActivity()
+        onMain {
+            navigation(activity).presentViewController(pushedController(activity), false)
+            activity.supportFragmentManager.executePendingTransactions()
+        }
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { navigation(activity).dismissModalViewControllerAnimated(false) }
+        assertFalse(UIApplication.isNotificationsEnabled)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { it.supportFragmentManager.executePendingTransactions() }
+        assertTrue(UIApplication.isNotificationsEnabled)
+    }
+
+    @Test
     fun popToRootWhileStateIsSavedIsAppliedOnRestart() {
         val activity = launchedActivity()
         pushAndSettle(activity, 2)
@@ -237,12 +276,12 @@ class PausedTransitionsTest {
     }
 
     @Test
-    fun pushRightAfterSuperOnStopIsListedAsPausedAndAppliedOnRestart() {
+    fun pushRightAfterSuperOnStopIsQueuedAndAppliedOnRestart() {
         val activity = launchedActivity()
         val pushed = pushedController(activity)
         activity.afterStop = { navigation(activity).pushViewController(pushed, false) }
         scenario.moveToState(Lifecycle.State.CREATED)
-        assertEquals(1, navigation(activity).pausedViewControllers?.count())
+        assertEquals(1, navigation(activity).pausedTransactions?.size)
         scenario.moveToState(Lifecycle.State.RESUMED)
         scenario.onActivity {
             it.supportFragmentManager.executePendingTransactions()

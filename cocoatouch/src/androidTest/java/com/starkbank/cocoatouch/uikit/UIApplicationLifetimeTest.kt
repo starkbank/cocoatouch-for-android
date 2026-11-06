@@ -269,7 +269,7 @@ class UIApplicationLifetimeTest {
     fun pushWhileTheTopIsFinishingIsQueuedForTheActivityBelow() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
-        awaitCondition("first has a paused queue") { navigation(first).pausedViewControllers != null }
+        awaitCondition("first has a paused queue") { navigation(first).pausedTransactions != null }
         instrumentation.runOnMainSync {
             top.finish()
             navigation(first).pushViewController(pushedController(first), false)
