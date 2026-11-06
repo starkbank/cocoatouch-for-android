@@ -1,6 +1,14 @@
 package com.starkbank.cocoatouch.uikit
 
 import android.graphics.Color
+import android.util.TypedValue
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.TextView
+import androidx.core.content.res.ResourcesCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.starkbank.cocoatouch.foundation.NSIndexPath
+import com.starkbank.cocoatouch.test.R
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -9,6 +17,7 @@ import com.starkbank.cocoatouch.TestStoryboard
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,10 +26,20 @@ import org.junit.runner.RunWith
 class UIAppearanceTest {
 
     private class TestAppearance(
+        val action: String = "#FFFFFF",
+        val headerFont: UIFont? = null,
         val border: String = "#CCCCCC",
         val secondary: String = "#EFEFF0",
         val darkSecondary: String = secondary
     ) : UIAppearance by UIDefaultAppearance {
+
+        override fun onActionColor(traitCollection: UITraitCollection): UIColor {
+            return UIColor(action)
+        }
+
+        override fun sectionHeaderFont(traitCollection: UITraitCollection): UIFont? {
+            return headerFont
+        }
 
         override fun borderColor(traitCollection: UITraitCollection): UIColor {
             return UIColor(border)
@@ -86,5 +105,55 @@ class UIAppearanceTest {
         instrumentation.runOnMainSync {
             assertEquals(Color.parseColor("#111111"), UISearchBar().barTintColor!!.colorInt)
         }
+    }
+
+    @Test
+    fun activityStartsWithTheConfigurationTrait() {
+        scenario.onActivity {
+            assertEquals(
+                UITraitCollection.from(it.resources.configuration.uiMode).userInterfaceStyle,
+                UITraitCollection.current.userInterfaceStyle
+            )
+        }
+    }
+
+    @Test
+    fun buttonTintUsesAppearanceActionColor() {
+        UIApplication.appearance = TestAppearance(action = "#ABCDEF")
+        var tint: UIColor? = null
+        instrumentation.runOnMainSync {
+            val button = UIButton().apply { widget = Button(UIApplication.context()) }
+            val field = UIButton::class.java.getDeclaredField("_tintColor")
+            field.isAccessible = true
+            tint = field.get(button) as UIColor
+        }
+        assertEquals(Color.parseColor("#ABCDEF"), tint!!.colorInt)
+    }
+
+    @Test
+    fun sectionHeaderFontReachesTheTitleCell() {
+        UIApplication.appearance = TestAppearance(headerFont = UIFont(R.font.cocoatouch_test_font, 18f))
+        var titleView: TextView? = null
+        instrumentation.runOnMainSync {
+            val context = UIApplication.context()
+            val tableView = UITableView().apply { widget = RecyclerView(context) }
+            tableView.setDataSource(object : UITableViewDataSource {
+                override fun tableViewNumberOfRowsInSection(tableView: UITableView, section: Int): Int = 0
+
+                override fun tableViewCellForRowAtIndexPath(
+                    tableView: UITableView,
+                    indexPath: NSIndexPath
+                ): UITableViewCell = UITableViewCell()
+
+                override fun tableViewTitleForHeaderInSection(tableView: UITableView, section: Int): String? = "Header"
+            })
+            val adapter = tableView.recyclerView().adapter!!
+            val holder = adapter.createViewHolder(FrameLayout(context), adapter.getItemViewType(0))
+            adapter.bindViewHolder(holder, 0)
+            titleView = (holder as UIViewHolder).container.getChildAt(0) as TextView
+        }
+        val metrics = UIApplication.context().resources.displayMetrics
+        assertEquals(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18f, metrics), titleView!!.textSize, 0.01f)
+        assertSame(ResourcesCompat.getFont(UIApplication.context(), R.font.cocoatouch_test_font), titleView!!.typeface)
     }
 }
