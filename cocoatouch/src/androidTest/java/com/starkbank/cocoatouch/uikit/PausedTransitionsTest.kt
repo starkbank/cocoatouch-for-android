@@ -204,6 +204,19 @@ class PausedTransitionsTest {
     }
 
     @Test
+    fun anInTabPresentQueuedWhileStoppedTurnsNotificationsOnOnlyWhenItRuns() {
+        val activity = launchedActivity()
+        val tabs = showTabs(activity)
+        val presented = pushedController(activity)
+        scenario.moveToState(Lifecycle.State.CREATED)
+        onMain { tabs.presentViewController(presented) }
+        assertFalse(UIApplication.isNotificationsEnabled)
+        scenario.moveToState(Lifecycle.State.RESUMED)
+        scenario.onActivity { it.supportFragmentManager.executePendingTransactions() }
+        assertTrue(UIApplication.isNotificationsEnabled)
+    }
+
+    @Test
     fun dismissWhileStateIsSavedIsAppliedOnRestart() {
         val activity = launchedActivity()
         val modal = pushedController(activity)

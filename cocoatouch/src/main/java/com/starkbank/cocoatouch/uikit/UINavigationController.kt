@@ -116,7 +116,6 @@ open class UINavigationController: UIViewController() {
         if (activity.isFinishing)
             return
 
-
         // The drain replays without animation, as the old drain forced animated = false
         // Evaluated first: it opens the queue that the transaction below joins
         val isQueued = pausedQueue() != null
@@ -197,6 +196,7 @@ open class UINavigationController: UIViewController() {
         // This code make ViewControllers to receive calls from viewDidAppear or viewDidDisappead...
         //
         sharedApplication().isNotificationsEnabled = true
+
         val storyboard = viewController.storyboard
         val fragment = viewController.view?.fragment()
 

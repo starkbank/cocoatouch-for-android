@@ -83,7 +83,6 @@ fun rootController(activity: UIActivity): RecordingViewController {
 // instead of sleeping a fixed time
 fun assertCollected(reference: WeakReference<*>) {
     repeat(20) {
-        if (reference.get() == null) return
         allocatePressure()
         Runtime.getRuntime().gc()
         Runtime.getRuntime().runFinalization()
