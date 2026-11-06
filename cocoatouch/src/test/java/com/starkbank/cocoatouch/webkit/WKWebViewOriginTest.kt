@@ -29,10 +29,29 @@ class WKWebViewOriginTest {
     }
 
     @Test
-    fun fileAndDataHaveAnEmptyHost() {
-        assertEquals("file://", originOf("file:///android_asset/a.html"))
-        assertEquals("file://", originOf("file://localhost/x"))
-        assertEquals("data://", originOf("data:text/html,x"))
+    fun aFilePageIsIdentifiedByItsPath() {
+        assertEquals("file:///android_asset/a.html", originOf("file:///android_asset/a.html"))
+    }
+
+    @Test
+    fun fileLocalhostIsTheSameAsNoHost() {
+        assertEquals("file:///x", originOf("file://localhost/x"))
+    }
+
+    @Test
+    fun fileQueryAndFragmentAreDropped() {
+        assertEquals("file:///android_asset/a.html", originOf("file:///android_asset/a.html?q#h"))
+        assertEquals("file:///android_asset/a.html", originOf("file:///android_asset/a.html#h?q"))
+    }
+
+    @Test
+    fun aDataUrlHasNoOrigin() {
+        assertEquals("", originOf("data:text/html,x"))
+    }
+
+    @Test
+    fun aboutBlankHasNoOrigin() {
+        assertEquals("", originOf("about:blank"))
     }
 
     @Test

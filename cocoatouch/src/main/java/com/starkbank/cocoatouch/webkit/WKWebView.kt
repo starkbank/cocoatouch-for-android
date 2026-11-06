@@ -40,7 +40,7 @@ open class WKWebView: UIView() {
     }
 
     fun load(request: URLRequest) {
-        if (!request.url.startsWith("javascript:", ignoreCase = true)) loadedOrigin = originOf(request.url)
+        if (!request.url.startsWith("javascript:", ignoreCase = true)) loadedOrigin = originOf(request.url).ifEmpty { null }
         getWebView().loadUrl(request.url)
     }
 
@@ -51,7 +51,8 @@ open class WKWebView: UIView() {
 // leading "use strict" directive is repeated in front of the guard to keep the consumer's strict mode
 internal fun guardedSource(origin: String, source: String): String {
     val strict = if (strictDirective.containsMatchIn(source)) "\"use strict\";\n" else ""
-    return strict + "if ((location.protocol + '//' + location.host) === ${JSONObject.quote(origin)} && " +
+    return strict + "if ((location.protocol === 'file:' ? location.protocol + '//' + location.host + location.pathname : " +
+        "location.protocol + '//' + location.host) === ${JSONObject.quote(origin)} && " +
         "!window.__cocoatouchUserScript) {\n" +
         "window.__cocoatouchUserScript = true;\n" +
         "$source\n" +
@@ -65,12 +66,14 @@ private val urlPattern = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):(?://([^/?#]*))?")
 private val defaultPorts = mapOf("https" to 443, "http" to 80)
 
 // Mirrors JS location.protocol + '//' + location.host: lowercase scheme, punycode host, port unless it is the
-// scheme's default
+// scheme's default. A file page is told apart by its path, because every asset shares the empty host, and a scheme
+// without an authority (data:, about:) has no origin to trust
 internal fun originOf(url: String): String {
     val match = urlPattern.find(url) ?: return ""
     val scheme = match.groupValues[1].lowercase(Locale.ROOT)
     val authority = match.groupValues[2].substringAfterLast('@')
-    if (scheme == "file") return "file://"
+    if (match.groups[2] == null) return ""
+    if (scheme == "file") return "file://" + url.substring(match.range.last + 1).substringBefore('?').substringBefore('#')
     val portIndex = authority.lastIndexOf(':')
     val hasPort = portIndex >= 0 && !authority.endsWith("]")
     val host = if (hasPort) authority.substring(0, portIndex) else authority

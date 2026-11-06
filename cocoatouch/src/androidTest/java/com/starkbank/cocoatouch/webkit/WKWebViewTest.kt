@@ -1,16 +1,22 @@
 package com.starkbank.cocoatouch.webkit
 
+import android.os.Build
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.webkit.WebViewAssetLoader
 import com.starkbank.cocoatouch.TestStoryboard
 import com.starkbank.cocoatouch.foundation.URLRequest
 import com.starkbank.cocoatouch.onMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,15 +81,50 @@ class WKWebViewTest {
     }
 
     @Test
-    fun aNavigationWithinTheLoadedOriginInjectsTheNewPageOnce() {
+    fun anotherFilePageIsNotInjected() {
         configure()
         onMain { webView.load(URLRequest(pageA)) }
         assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
         evaluate("document.getElementById('go').click()")
         val onPageB = "location.pathname.endsWith('web_b.html') ? $countScript : 'waiting'"
-        assertEquals("\"1\"", awaitResult(onPageB, "\"1\""))
+        assertEquals("\"undefined\"", awaitResult(onPageB, "\"undefined\""))
         Thread.sleep(500)
-        assertEquals("\"1\"", evaluate(onPageB))
+        assertEquals("\"undefined\"", evaluate(onPageB))
+    }
+
+    @Test
+    fun anHttpsPageIsInjectedOnce() {
+        assumeTrue(Build.VERSION.SDK_INT >= 26)
+        configure()
+        onMain {
+            val library = widget.webViewClient
+            val assetLoader = WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(widget.context))
+                .build()
+            widget.webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                    return request?.let { assetLoader.shouldInterceptRequest(it.url) }
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    library.onPageFinished(view, url)
+                }
+            }
+            webView.load(URLRequest("https://appassets.androidplatform.net/assets/cocoatouch_test_web_a.html"))
+        }
+        assertEquals("\"1\"", awaitResult(countScript, "\"1\""))
+        Thread.sleep(500)
+        assertEquals("\"1\"", evaluate(countScript))
+    }
+
+    @Test
+    fun aDataPageIsNeverInjected() {
+        configure()
+        onMain { webView.load(URLRequest("data:text/html,<html></html>")) }
+        val onDataPage = "location.protocol === 'data:' ? $countScript : 'waiting'"
+        assertEquals("\"undefined\"", awaitResult(onDataPage, "\"undefined\""))
+        Thread.sleep(500)
+        assertEquals("\"undefined\"", evaluate(onDataPage))
     }
 
     @Test
@@ -141,9 +182,9 @@ class WKWebViewTest {
         awaitResult("document.readyState", "\"complete\"")
         evaluate(guardedSource("https://other.test", countingSource))
         assertEquals("\"undefined\"", evaluate(countScript))
-        evaluate(guardedSource("file://", countingSource))
+        evaluate(guardedSource(pageA, countingSource))
         assertEquals("\"1\"", evaluate(countScript))
-        evaluate(guardedSource("file://", countingSource))
+        evaluate(guardedSource(pageA, countingSource))
         assertEquals("\"1\"", evaluate(countScript))
     }
 
