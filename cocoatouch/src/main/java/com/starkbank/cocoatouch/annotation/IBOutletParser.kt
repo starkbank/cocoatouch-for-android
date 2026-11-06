@@ -4,6 +4,7 @@ import com.starkbank.cocoatouch.uikit.UIResponder
 import com.starkbank.cocoatouch.uikit.UIView
 import com.starkbank.cocoatouch.uikit.UIViewController
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -22,20 +23,22 @@ object IBOutletParser {
         return fieldsByType.computeIfAbsent(type) { walk(it) }
     }
 
-    // Walks up to UIResponder so a base controller's outlets are bound; a subclass field hides the parent's by name.
+    // Walks up to UIResponder so a base controller's outlets are bound. A private field is keyed by its declaring class
+    // because a subclass field of the same name does not replace it; any other field is an override, so the subclass wins
     // The result is constant per class, so it is built once and made accessible once
     private fun walk(type: Class<*>): List<Field> {
-        val fieldsByName = LinkedHashMap<String, Field>()
+        val fieldsByKey = LinkedHashMap<Pair<Class<*>?, String>, Field>()
         var current: Class<*>? = type
         while (current != null && current != UIResponder::class.java) {
             for (field in current.declaredFields) {
                 if (!field.isAnnotationPresent(IBOutlet::class.java)) continue
                 field.isAccessible = true
-                fieldsByName.putIfAbsent(field.name, field)
+                val owner = if (Modifier.isPrivate(field.modifiers)) current else null
+                fieldsByKey.putIfAbsent(Pair(owner, field.name), field)
             }
             current = current.superclass
         }
-        return fieldsByName.values.toList()
+        return fieldsByKey.values.toList()
     }
 
     private fun parse(field: Field, controller: UIResponder) {

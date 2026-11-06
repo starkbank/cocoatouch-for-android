@@ -28,6 +28,18 @@ class HidingChildOutletFixture : HidingParentOutletFixture() {
     @IBOutlet(2) override lateinit var label: UILabel
 }
 
+open class ShadowBase : UIViewController() {
+
+    @IBOutlet(1) private lateinit var label: UILabel
+
+    fun baseLabel(): UILabel = label
+}
+
+class ShadowChild : ShadowBase() {
+
+    @IBOutlet(1) lateinit var label: UILabel
+}
+
 class IBOutletParserTest {
 
     @Test
@@ -43,6 +55,15 @@ class IBOutletParserTest {
         val labels = IBOutletParser.outletFields(HidingChildOutletFixture::class.java).filter { it.name == "label" }
         assertEquals(1, labels.size)
         assertEquals(HidingChildOutletFixture::class.java, labels.first().declaringClass)
+    }
+
+    @Test
+    fun aPrivateParentFieldAndASubclassFieldWithTheSameNameAreBothOutlets() {
+        val labels = IBOutletParser.outletFields(ShadowChild::class.java).filter { it.name == "label" }
+        assertEquals(
+            setOf(ShadowBase::class.java, ShadowChild::class.java),
+            labels.map { it.declaringClass }.toSet()
+        )
     }
 
     @Test
