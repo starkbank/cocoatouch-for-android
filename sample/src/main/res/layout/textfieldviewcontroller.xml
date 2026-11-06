@@ -10,6 +10,12 @@
         android:orientation="vertical"
         android:background="#fff">
 
+        <TextView
+            android:id="@+id/textFieldHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
         <com.starkbank.cocoatouch.uikit.BackEditText
             android:id="@+id/textField1"
             android:layout_width="match_parent"
