@@ -1,7 +1,6 @@
 package com.starkbank.cocoatouch.uikit
 
 import com.starkbank.cocoatouch.R
-import com.starkbank.cocoatouch.foundation.weakReference
 
 
 open class UITabBarController : UIViewController(), UITabBarDelegate {
@@ -15,7 +14,7 @@ open class UITabBarController : UIViewController(), UITabBarDelegate {
             tabBar?.delegate = this
         }
 
-    var delegate: UITabBarDelegate? by weakReference(null)
+    var delegate: UITabBarDelegate? = null
 
     var viewControllers: ArrayList<UIViewController> = arrayListOf()
         set(value) {

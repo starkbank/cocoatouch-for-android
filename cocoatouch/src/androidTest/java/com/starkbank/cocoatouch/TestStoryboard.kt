@@ -83,13 +83,17 @@ fun rootController(activity: UIActivity): RecordingViewController {
 // instead of sleeping a fixed time
 fun assertCollected(reference: WeakReference<*>) {
     repeat(20) {
-        allocatePressure()
-        Runtime.getRuntime().gc()
-        Runtime.getRuntime().runFinalization()
-        Thread.sleep(50)
+        collectGarbageOnce()
         if (reference.get() == null) return
     }
     fail("${reference.get()} still reachable after 20 GC rounds")
+}
+
+fun collectGarbageOnce() {
+    allocatePressure()
+    Runtime.getRuntime().gc()
+    Runtime.getRuntime().runFinalization()
+    Thread.sleep(50)
 }
 
 private fun allocatePressure() {

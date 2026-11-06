@@ -9,9 +9,12 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
+import com.starkbank.cocoatouch.collectGarbageOnce
+import com.starkbank.cocoatouch.onMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -82,6 +85,19 @@ class UISearchBarTest {
             searchBar.getEditText().requestFocus()
             assertEquals(1, delegate.calls)
             assertTrue(searchBar.getEditText().hasFocus())
+        }
+    }
+
+    @Test
+    fun anInlineDelegateObjectIsKept() {
+        onMain { assignInlineDelegate() }
+        repeat(20) { collectGarbageOnce() }
+        onMain { assertNotNull(searchBar.delegate) }
+    }
+
+    private fun assignInlineDelegate() {
+        searchBar.delegate = object : UISearchBarDelegate {
+            override fun searchBarShouldBeginEditing(searchBar: UISearchBar): Boolean = false
         }
     }
 
