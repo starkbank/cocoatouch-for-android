@@ -96,10 +96,9 @@ open class UINavigationController: UIViewController() {
             val controllerToRemove = this.pushViewControllers.objectAtIndex(i)
             this.pushViewControllers.removeObject(controllerToRemove)
         }
-        val viewController = this.pushViewControllers.objectAtIndex(0)
         val activity = sharedApplication().activity()
         activity.supportFragmentManager.popBackStack(
-            viewController.javaClass.name,
+            null,
             FragmentManager.POP_BACK_STACK_INCLUSIVE
         )
 
