@@ -65,6 +65,7 @@ Compared with 0.0.1, the only public predecessor:
 - `NotificationCenter.addObserver` returns a `NotificationObserver` and `removeObserver(observer)` removes exactly that one; the no-argument `removeObserver()` is deprecated and removes every registered observer, where 0.0.1 kept a single slot, so it unregistered only the last observer and leaked the others.
 - A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
 - `UIApplication` re-attaches on `onResume` too, so an activity that was only paused under a translucent one is attached again when it comes back.
+- Pops and dismisses requested while the activity's state is saved are queued in order with the pushes and applied when it restarts; every navigation transaction runs on the activity that owns the navigation controller.
 - `applicationWillEnterForeground` is called on every `onResume`, including the first launch and returns from permission dialogs and pickers; 0.0.1 never called it.
 
 ### Known issues

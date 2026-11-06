@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.starkbank.cocoatouch.compatibility.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 
 
@@ -14,6 +15,10 @@ open class UIActivity: AppCompatActivity() {
     private var isInBackground = false
     private var lastCall: (() -> Unit)? = null
     internal var pickers: ActivityPickers? = null
+
+    init {
+        navigationController.owner = WeakReference(this)
+    }
 
     open fun initialViewControllerId(): Int {
         return 0
@@ -147,14 +152,16 @@ open class UIActivity: AppCompatActivity() {
 
     private fun startPausedTransitions() {
         this.navigationController.pausedViewControllers = NSMutableArray<UIViewController>()
+        this.navigationController.pausedTransactions = mutableListOf()
     }
 
     private fun finishPausedTransitions() {
-        val paused = this.navigationController.pausedViewControllers ?: return
-        // Detach first: presenting re-queues while the list is non-null, which breaks the iteration
+        val transactions = this.navigationController.pausedTransactions ?: return
+        // Detach first: a transaction that re-queues while the list is non-null would grow it during the iteration
+        this.navigationController.pausedTransactions = null
         this.navigationController.pausedViewControllers = null
-        for (controller in paused) {
-            this.navigationController.presentPushViewController(controller, false)
+        for (transaction in transactions) {
+            transaction()
         }
     }
 

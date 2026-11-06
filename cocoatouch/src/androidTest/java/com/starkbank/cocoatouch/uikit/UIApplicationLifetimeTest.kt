@@ -217,6 +217,22 @@ class UIApplicationLifetimeTest {
     }
 
     @Test
+    fun popOnAStoppedActivityDoesNotTouchTheAttachedOne() {
+        val first = scenarioActivity()
+        onMain { navigation(first).pushViewController(pushedController(first), false) }
+        awaitCondition("first to hold one pushed controller") { first.supportFragmentManager.backStackEntryCount == 1 }
+        val top = launchSecondInstance(first)
+        onMain { navigation(top).pushViewController(pushedController(top), false) }
+        awaitCondition("top to hold one pushed controller") { top.supportFragmentManager.backStackEntryCount == 1 }
+        onMain { navigation(first).popViewController(false) }
+        instrumentation.waitForIdleSync()
+        onMain { assertEquals(1, top.supportFragmentManager.backStackEntryCount) }
+        finishAndAwaitDestroyed(top)
+        awaitCondition("first resumed") { resumedStoryboards() == listOf(first) }
+        awaitCondition("the queued pop to reach the back stack") { first.supportFragmentManager.backStackEntryCount == 0 }
+    }
+
+    @Test
     fun pushWhileTheTopIsFinishingIsQueuedForTheActivityBelow() {
         val first = scenarioActivity()
         val top = launchSecondInstance(first)
