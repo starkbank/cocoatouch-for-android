@@ -394,10 +394,12 @@ class UIApplicationLifetimeTest {
         return second!!
     }
 
+    // Before O the system destroys a finished background activity only when the resumed one reports idle, which under
+    // the load of the whole suite on API 25 took more than 15 s once
     private fun finishAndAwaitDestroyed(activity: Activity) {
         instrumentation.runOnMainSync { activity.finish() }
         instrumentation.waitForIdleSync()
-        awaitCondition("the activity to be destroyed", timeoutMillis = 15000) {
+        awaitCondition("the activity to be destroyed", timeoutMillis = 30000) {
             ActivityLifecycleMonitorRegistry.getInstance().getLifecycleStageOf(activity) == Stage.DESTROYED
         }
     }
