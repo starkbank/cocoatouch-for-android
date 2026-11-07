@@ -25,7 +25,7 @@ jobs:
       - run: sh scripts/test-upload-central-bundle.sh
       - run: sh scripts/test-verify-central-bundle.sh
       - run: sh scripts/test-check-release-environment.sh
-      # Dependency checksums live in gradle/verification-metadata.xml; after a dependency change run ./gradlew --write-verification-metadata sha256 <the CI tasks> and commit the file
+      # Dependency checksums live in gradle/verification-metadata.xml; after a dependency change run ./gradlew --write-verification-metadata sha256 <the CI tasks> from an EMPTY GRADLE_USER_HOME (a warm cache skips parent POMs and BOMs) and commit the file; platform-specific artifacts (aapt2 linux/windows) are added by hand from dl.google.com
       - run: ./gradlew --no-daemon :cocoatouch:testDebugUnitTest :cocoatouch:lintRelease :cocoatouch:assembleRelease :sample:assembleDebug :sample:assembleMinified :cocoatouch:centralBundle -PVERSION_NAME=0.0.0-ci -PunsignedBundle
       - run: sh scripts/verify-central-bundle.sh cocoatouch/build/distributions/central-bundle.zip 0.0.0-ci --unsigned
       - run: |
