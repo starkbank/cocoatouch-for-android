@@ -24,7 +24,7 @@ esac
 
 case "$mode" in
     keep) expected="cocoatouch-$version" ;;
-    drop) expected="cocoatouch-$version-dryrun-*" ;;
+    drop) expected="cocoatouch-$version-dryrun-?*" ;;
 esac
 case "$name" in
     $expected) ;;

@@ -26,7 +26,7 @@ selfReviewCount=$(printf '%s' "$details" | jq '[.protection_rules[]? | select(.t
 customPolicy=$(printf '%s' "$details" | jq -r '.deployment_branch_policy.custom_branch_policies // false')
 [ "$customPolicy" = "true" ] || fail "environment $environment does not set custom_branch_policies"
 
-policies=$(gh api "$path/deployment-branch-policies") || {
+policies=$(gh api "$path/deployment-branch-policies?per_page=100") || {
     printf '%s\n' "$policies" >&2
     exit 1
 }

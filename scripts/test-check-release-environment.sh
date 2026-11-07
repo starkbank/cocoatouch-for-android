@@ -11,7 +11,7 @@ cat > "$work/bin/gh" <<'STUB'
 #!/bin/sh
 printf '%s\n' "$*" >> "$STUB_DIR/calls"
 case "$2" in
-    */deployment-branch-policies)
+    */deployment-branch-policies*)
         cat "$STUB_DIR/policies.json"
         ;;
     *)
@@ -55,6 +55,7 @@ reset
 run protected 0
 grep -Fxq 'environment maven-central protected: reviewers, prevent_self_review, policies master + v*' "$work/out" || fail "success line missing"
 grep -Fq 'repos/starkbank/cocoatouch-for-android/environments/maven-central' "$work/calls" || fail "environment not queried"
+grep -Fq "deployment-branch-policies?per_page=100" "$work/calls" || fail "policies not requested with per_page=100"
 echo "ok: protected"
 
 reset

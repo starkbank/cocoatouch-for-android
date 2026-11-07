@@ -218,6 +218,12 @@ deploymentName=
 grep -Fq 'needs a deployment named cocoatouch-1.2.3-dryrun-' "$work/out" || fail "expected name not printed"
 echo "ok: dropNeedsADryRunName"
 
+deploymentName=cocoatouch-1.2.3-dryrun-
+run dropNeedsARunId drop 2 3
+deploymentName=
+[ ! -s "$work/calls" ] || fail "curl called for a dry-run name without a run id"
+echo "ok: dropNeedsARunId"
+
 printf 'VALIDATED\n' > "$work/polls"
 deploymentName=cocoatouch-1.2.3-dryrun-7
 run dropAcceptsADryRunName drop 0 3

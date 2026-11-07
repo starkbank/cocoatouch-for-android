@@ -60,7 +60,7 @@ jobs:
         run: |
           git fetch --no-tags origin master
           git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD
-          grep -qF -- "## [$VERSION]" CHANGELOG.md
+          awk -v heading="## [$VERSION]" 'index($0, heading) == 1 { found = 1 } END { exit !found }' CHANGELOG.md
       - run: ./gradlew --no-daemon :cocoatouch:testDebugUnitTest
       - run: ./gradlew --no-daemon :cocoatouch:centralBundle -PVERSION_NAME="$VERSION"
         env:
