@@ -4,7 +4,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.fragment.app.Fragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -16,7 +18,7 @@ import com.starkbank.cocoatouch.storyboard
 import com.starkbank.cocoatouch.test.R
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -104,17 +106,27 @@ class KnownGapInstrumentedTest {
         }
         onMain {
             assertTrue("table never reported a row, childCount=${list.childCount}", displayedRows.isNotEmpty())
-            assertEquals(listOf(2), displayedRows.toList())
-            assertFalse(0 in displayedRows)
+            val lastVisible = (list.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
+            assertTrue("lastVisible=$lastVisible", lastVisible >= 1)
+            assertEquals(listOf(lastVisible), displayedRows.toList())
+            assertTrue(displayedRows.none { it < lastVisible })
         }
     }
 
     // Pins audit CT-16: a recreated activity gets a new navigation controller holding only the initial controller.
     @Test
     fun ct16RecreateKeepsOnlyTheInitialController() {
-        scenario.onActivity { navigation(it).pushViewController(pushed(it), false) }
+        scenario.onActivity {
+            navigation(it).pushViewController(pushed(it), false)
+            it.supportFragmentManager.beginTransaction().add(Fragment(), "appFragment").commitNow()
+        }
         scenario.recreate()
-        scenario.onActivity { assertEquals(1, navigation(it).viewControllers.size) }
+        scenario.onActivity {
+            assertEquals(1, navigation(it).viewControllers.size)
+            assertNotNull(it.supportFragmentManager.findFragmentByTag("appFragment"))
+            assertEquals(1, it.supportFragmentManager.fragments.filterIsInstance<UIFragment>().size)
+            assertEquals(0, it.supportFragmentManager.backStackEntryCount)
+        }
     }
 
     // The modal presentation reads the controller's storyboard, which only storyboard-made controllers have

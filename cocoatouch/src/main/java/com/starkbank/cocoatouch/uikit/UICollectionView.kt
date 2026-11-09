@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView.*
 import com.starkbank.cocoatouch.R
 import com.starkbank.cocoatouch.annotation.IBActionParser
 import com.starkbank.cocoatouch.annotation.IBOutletParser
+import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 import com.starkbank.cocoatouch.foundation.NSIndexPath
 
 class UICollectionView : UIScrollView() {
@@ -144,6 +145,7 @@ class UICollectionView : UIScrollView() {
 
 }
 
+@InternalCocoaTouchApi
 class UIViewHolder(itemView: View) :
     ViewHolder(itemView) {
     companion object {

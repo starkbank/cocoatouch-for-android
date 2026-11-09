@@ -102,6 +102,16 @@ class UIAppearanceTest {
     }
 
     @Test
+    fun barTintColorFollowsAnAppearanceSetAfterConstruction() {
+        UIApplication.appearance = TestAppearance(secondary = "#111111")
+        instrumentation.runOnMainSync {
+            val searchBar = UISearchBar()
+            UIApplication.appearance = TestAppearance(secondary = "#333333")
+            assertEquals(Color.parseColor("#333333"), searchBar.barTintColor!!.colorInt)
+        }
+    }
+
+    @Test
     fun darkTraitReachesTheAppearance() {
         UIApplication.appearance = TestAppearance(secondary = "#EEEEEE", darkSecondary = "#111111")
         UITraitCollection.current = UITraitCollection(UIUserInterfaceStyle.dark)
@@ -138,16 +148,13 @@ class UIAppearanceTest {
     }
 
     @Test
-    fun buttonTintUsesAppearanceActionColor() {
+    fun theTintFollowsAnAppearanceSetAfterConstruction() {
         UIApplication.appearance = TestAppearance(action = "#ABCDEF")
-        var tint: UIColor? = null
         instrumentation.runOnMainSync {
             val button = UIButton().apply { widget = Button(UIApplication.context()) }
-            val field = UIButton::class.java.getDeclaredField("_tintColor")
-            field.isAccessible = true
-            tint = field.get(button) as UIColor
+            UIApplication.appearance = TestAppearance(action = "#654321")
+            assertEquals(Color.parseColor("#654321"), button.resolvedTintColor().colorInt)
         }
-        assertEquals(Color.parseColor("#ABCDEF"), tint!!.colorInt)
     }
 
     @Test

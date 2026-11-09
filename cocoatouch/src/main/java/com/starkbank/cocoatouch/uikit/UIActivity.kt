@@ -3,8 +3,10 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import com.starkbank.cocoatouch.compatibility.BackPressedParser
 import com.starkbank.cocoatouch.foundation.NSMutableArray
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 
 
@@ -13,6 +15,11 @@ open class UIActivity: AppCompatActivity() {
     protected val navigationController = UINavigationController()
     private var isInBackground = false
     private var lastCall: (() -> Unit)? = null
+    internal var pickers: ActivityPickers? = null
+
+    init {
+        navigationController.owner = WeakReference(this)
+    }
 
     open fun initialViewControllerId(): Int {
         return 0
@@ -35,7 +42,7 @@ open class UIActivity: AppCompatActivity() {
     }
 
     fun setRootViewController(viewController: UIViewController) {
-        if (UIApplication.activity == null) return
+        if (isDestroyed) return
         if(!isInBackground) {
             for (fragment in this.supportFragmentManager.fragments) {
                 this.supportFragmentManager.beginTransaction().remove(fragment).commitAllowingStateLoss()
@@ -54,6 +61,7 @@ open class UIActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareLaunch()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) dropRestoredFragments()
         UITraitCollection.current = UITraitCollection.from(resources.configuration.uiMode)
         setContentView(storyboardId())
         UIApplication.attach(this)
@@ -61,6 +69,17 @@ open class UIActivity: AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { dispatchBackPressed() }
         })
+    }
+
+    // The navigation stack is rebuilt from the initial controller (CT-16), so the restored fragments would be blank
+    // views under the new root
+    private fun dropRestoredFragments() {
+        supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        val transaction = supportFragmentManager.beginTransaction()
+        for (fragment in supportFragmentManager.fragments) {
+            if (fragment is UIFragment) transaction.remove(fragment)
+        }
+        transaction.commitNow()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -103,6 +122,7 @@ open class UIActivity: AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (UIApplication.activity !== this) UIApplication.attach(this)
         val application = UIApplication.sharedApplication()
         application.delegate?.applicationWillEnterForeground(application)
         isInBackground = false
@@ -110,6 +130,12 @@ open class UIActivity: AppCompatActivity() {
             it.invoke()
             lastCall = null
         }
+    }
+
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        super.onTopResumedActivityChanged(isTopResumedActivity)
+        if (!isTopResumedActivity) return
+        if (UIApplication.activity !== this) UIApplication.attach(this)
     }
 
     override fun onPause() {
@@ -144,15 +170,15 @@ open class UIActivity: AppCompatActivity() {
     }
 
     private fun startPausedTransitions() {
-        this.navigationController.pausedViewControllers = NSMutableArray<UIViewController>()
+        this.navigationController.pausedTransactions = this.navigationController.pausedTransactions ?: mutableListOf()
     }
 
     private fun finishPausedTransitions() {
-        val paused = this.navigationController.pausedViewControllers ?: return
-        // Detach first: presenting re-queues while the list is non-null, which breaks the iteration
-        this.navigationController.pausedViewControllers = null
-        for (controller in paused) {
-            this.navigationController.presentPushViewController(controller, false)
+        val transactions = this.navigationController.pausedTransactions ?: return
+        // Detach first: a transaction that re-queues while the list is non-null would grow it during the iteration
+        this.navigationController.pausedTransactions = null
+        for (transaction in transactions) {
+            transaction()
         }
     }
 

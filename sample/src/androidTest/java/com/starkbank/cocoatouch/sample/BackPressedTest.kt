@@ -9,7 +9,6 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.starkbank.cocoatouch.uikit.UIFragment
 
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -32,9 +31,7 @@ class BackPressedTest {
         onView(withId(R.id.tableview)).check(doesNotExist())
         onView(withId(R.id.mainTableview)).check(matches(isDisplayed()))
         activityRule.scenario.onActivity { activity ->
-            val rootFragment = activity.supportFragmentManager.fragments.first() as UIFragment
-            val navigationController = rootFragment.viewController!!.navigationController!!
-            assertEquals(1, navigationController.viewControllers.size)
+            assertEquals(0, activity.supportFragmentManager.backStackEntryCount)
         }
     }
 }

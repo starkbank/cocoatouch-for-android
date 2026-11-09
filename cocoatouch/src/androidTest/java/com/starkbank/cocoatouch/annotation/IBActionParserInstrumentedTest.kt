@@ -29,6 +29,15 @@ class ViewActionFixture : UIViewController() {
     }
 }
 
+class AnySenderBindFixture : UIViewController() {
+
+    var received: Any? = null
+
+    @IBAction(1) fun act(sender: Any) {
+        received = sender
+    }
+}
+
 class BoomFixture : UIViewController() {
 
     @IBAction(1) fun boom(sender: UIView) {
@@ -67,6 +76,20 @@ class IBActionParserInstrumentedTest {
             IBActionParser.parse(fixture)
             clickedView.performClick()
             assertSame(clickedView, (fixture.sender as UIView).widget)
+        }
+    }
+
+    @Test
+    fun anySenderTypeBinds() {
+        onMain {
+            val clickedView = View(UIApplication.context()).apply { id = 1 }
+            val fixture = AnySenderBindFixture()
+            fixture.view = UIView().apply {
+                widget = FrameLayout(UIApplication.context()).apply { addView(clickedView) }
+            }
+            IBActionParser.parse(fixture)
+            clickedView.performClick()
+            assertSame(clickedView, (fixture.received as UIResponder).widget)
         }
     }
 

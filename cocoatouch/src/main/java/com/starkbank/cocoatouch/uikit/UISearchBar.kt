@@ -5,7 +5,6 @@ import android.widget.EditText
 import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import com.starkbank.cocoatouch.compatibility.UIKeyInput
-import com.starkbank.cocoatouch.foundation.weakReference
 import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
@@ -37,7 +36,8 @@ class UISearchBar : UIView() {
             }
         }
 
-    var barTintColor: UIColor? = UIApplication.appearance.secondaryBackgroundColor(UITraitCollection.current)
+    var barTintColor: UIColor? = null
+        get() = field ?: UIApplication.appearance.secondaryBackgroundColor(UITraitCollection.current)
         set(value) {
             field = value
             backgroundColor = value
@@ -58,12 +58,9 @@ class UISearchBar : UIView() {
             getSearchView().queryHint = placeholder
         }
 
-    private var weakDelegate: UISearchBarDelegate? by weakReference()
-
-    var delegate: UISearchBarDelegate?
-        get() = weakDelegate
+    var delegate: UISearchBarDelegate? = null
         set(value) {
-            weakDelegate = value
+            field = value
             installFocusListener()
         }
 

@@ -9,17 +9,18 @@ private val mainHandler = Handler(Looper.getMainLooper())
 
 class DispatchGroup {
 
+    private val lock = Any()
     private var pending = 0
     private val blocks = mutableListOf<Pair<DispatchQueue, () -> Unit>>()
 
     fun enter() {
-        synchronized(this) {
+        synchronized(lock) {
             pending += 1
         }
     }
 
     fun leave() {
-        val ready = synchronized(this) {
+        val ready = synchronized(lock) {
             check(pending > 0) { "DispatchGroup.leave() called more times than enter()" }
             pending -= 1
             if (pending > 0) return@synchronized emptyList()
@@ -31,7 +32,7 @@ class DispatchGroup {
     }
 
     fun notify(dispatchQueue: DispatchQueue, work: () -> Unit) {
-        val balanced = synchronized(this) {
+        val balanced = synchronized(lock) {
             if (pending > 0) blocks.add(dispatchQueue to work)
             pending == 0
         }

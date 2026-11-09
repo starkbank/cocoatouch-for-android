@@ -15,15 +15,20 @@ class UISwitch : UIControl() {
 
     var onTintColor: UIColor? = null
         set(value) {
+            if (value == null) {
+                getSwitch().trackTintList = null
+                getSwitch().thumbTintList = null
+                field = null
+                return
+            }
             val appearance = UIApplication.appearance
             val trait = UITraitCollection.current
             val thumbColors = ColorStateList(
-                arrayOf(intArrayOf(R.attr.state_checked), intArrayOf()), value?.let {
-                    intArrayOf(
-                        it.colorInt,
-                        appearance.borderColor(trait).colorInt
-                    )
-                }
+                arrayOf(intArrayOf(R.attr.state_checked), intArrayOf()),
+                intArrayOf(
+                    value.colorInt,
+                    appearance.borderColor(trait).colorInt
+                )
             )
             getSwitch().trackTintList = thumbColors
             getSwitch().thumbTintList = ColorStateList.valueOf(appearance.onActionColor(trait).colorInt)

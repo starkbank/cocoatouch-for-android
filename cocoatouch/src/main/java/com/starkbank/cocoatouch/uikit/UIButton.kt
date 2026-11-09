@@ -7,7 +7,10 @@ import androidx.core.graphics.drawable.DrawableCompat
 
 open class UIButton: UIControl() {
 
-    private var _tintColor: UIColor = UIApplication.appearance.onActionColor(UITraitCollection.current)
+    private var _tintColor: UIColor? = null
+
+    internal fun resolvedTintColor(): UIColor =
+        _tintColor ?: UIApplication.appearance.onActionColor(UITraitCollection.current)
 
     private fun getButton(): Button{
         return (widget as Button)
@@ -29,7 +32,7 @@ open class UIButton: UIControl() {
 
     open fun setImage(image: UIImage, state: UIControlState){
         getButton().setBackgroundResource(image.imageRes)
-        setTintColor(_tintColor)
+        setTintColor(resolvedTintColor())
     }
 
     open fun setTintColor(color: UIColor){

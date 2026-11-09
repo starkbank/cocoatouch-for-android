@@ -1,44 +1,45 @@
 package com.starkbank.cocoatouch.foundation
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.starkbank.cocoatouch.uikit.UIApplication
+import android.os.Handler
+import android.os.Looper
+import java.util.concurrent.CopyOnWriteArrayList
+
+class NotificationObserver internal constructor(internal val selector: () -> Unit, val name: String)
 
 class NotificationCenter {
 
     companion object {
 
-        private var broadcastReceiver: BroadcastReceiver? = null
+        // Observers may be added, removed or posted to from any thread (copy-on-write list: a post iterates a snapshot);
+        // selectors always run on the main thread
+        private val observers = CopyOnWriteArrayList<NotificationObserver>()
+        private val mainHandler = Handler(Looper.getMainLooper())
 
-        fun addObserver(selector: ()-> (Unit), name: String, ) {
-            broadcastReceiver = object: BroadcastReceiver() {
-                override fun onReceive(p0: Context?, p1: Intent?) {
-                    selector.invoke()
-                }
-            }
-            broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).registerReceiver(it, IntentFilter(name))
-            }
+        fun addObserver(selector: () -> Unit, name: String): NotificationObserver {
+            val observer = NotificationObserver(selector, name)
+            observers.add(observer)
+            return observer
         }
 
+        fun removeObserver(observer: NotificationObserver) {
+            observers.remove(observer)
+        }
+
+        @JvmSynthetic
+        @Deprecated(
+            "Remove the observer you added with the token addObserver returned",
+            level = DeprecationLevel.ERROR
+        )
         fun removeObserver() {
-            broadcastReceiver?.let {
-                LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).unregisterReceiver(
-                    it
-                )
-            }
+            observers.clear()
         }
 
         fun postNotification(name: String, params: HashMap<String, String> = hashMapOf()) {
-            val intent = Intent(name)
-            //TODO: CREATE MAP DO INTENT
-            //        for ((key, value): Map.Entry<String, String> in params.entrySet()) {
-            //            intent.putExtra(key, value)
-            //        }
-            LocalBroadcastManager.getInstance(UIApplication.applicationContext!!).sendBroadcast(intent)
+            mainHandler.post {
+                for (observer in observers) {
+                    if (observer.name == name) observer.selector.invoke()
+                }
+            }
         }
     }
 }

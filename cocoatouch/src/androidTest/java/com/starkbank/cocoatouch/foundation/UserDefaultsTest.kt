@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.starkbank.cocoatouch.TestStoryboard
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -30,5 +31,19 @@ class UserDefaultsTest {
         UserDefaults.standard.set("value", "token")
         UserDefaults.standard.removeObject("token")
         assertNull(UserDefaults.standard.string("token"))
+    }
+
+    @Test
+    fun settingANullBoolRemovesTheKey() {
+        UserDefaults.standard.set(true, "flag")
+        UserDefaults.standard.set(null as Boolean?, "flag")
+        assertFalse(UserDefaults.standard.bool("flag"))
+    }
+
+    @Test
+    fun settingANullStringRemovesTheKey() {
+        UserDefaults.standard.set("value", "text")
+        UserDefaults.standard.set(null as String?, "text")
+        assertNull(UserDefaults.standard.string("text"))
     }
 }

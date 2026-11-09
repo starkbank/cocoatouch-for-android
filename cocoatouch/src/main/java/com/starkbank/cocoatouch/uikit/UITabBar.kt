@@ -4,7 +4,6 @@ import android.R
 import android.content.res.ColorStateList
 import android.view.Menu
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.starkbank.cocoatouch.foundation.weakReference
 
 
 class UITabBar : UIView() {
@@ -13,7 +12,7 @@ class UITabBar : UIView() {
 
     var selectedItem: UITabBarItem? = null
 
-    var delegate: UITabBarDelegate? by weakReference(null)
+    var delegate: UITabBarDelegate? = null
 
     private fun getTabBar(): BottomNavigationView {
         return (this.widget as BottomNavigationView)

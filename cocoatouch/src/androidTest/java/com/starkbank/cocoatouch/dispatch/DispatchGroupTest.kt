@@ -2,6 +2,7 @@ package com.starkbank.cocoatouch.dispatch
 
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -43,10 +44,10 @@ class DispatchGroupTest {
     fun everyPendingNotifyRunsOnce() {
         val latch = CountDownLatch(2)
         group.enter()
-        repeat(2) { group.notify(DispatchQueue.global) { runs.incrementAndGet(); latch.countDown() } }
+        repeat(2) { group.notify(DispatchQueue.main) { runs.incrementAndGet(); latch.countDown() } }
         group.leave()
         assertTrue(latch.await(1, SECONDS))
-        Thread.sleep(200)
+        awaitMainQueueDrained()
         assertEquals(2, runs.get())
     }
 
@@ -86,7 +87,7 @@ class DispatchGroupTest {
         group.notify(DispatchQueue.main) { second.countDown() }
         group.leave()
         assertTrue(second.await(1, SECONDS))
-        Thread.sleep(200)
+        awaitMainQueueDrained()
         assertEquals(1, runs.get())
     }
 
@@ -107,5 +108,10 @@ class DispatchGroupTest {
             group.notify(DispatchQueue.global) { latch.countDown() }
         }
         assertTrue(latch.await(5, SECONDS))
+    }
+
+    // runOnMainSync returns after every message posted earlier to the main looper ran, so a duplicate run is counted
+    private fun awaitMainQueueDrained() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {}
     }
 }

@@ -9,6 +9,7 @@ import com.starkbank.cocoatouch.annotation.IBOutletParser
 import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi
 
 
+@InternalCocoaTouchApi
 class UIFragment : Fragment() {
 
     var identifier = 0
@@ -24,7 +25,7 @@ class UIFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         if (this.identifier == 0) {
-            return View(UIApplication.sharedApplication().context())
+            return View(requireContext())
         }
         this.container = inflater.inflate(this.identifier, container, false)
         this.viewController?.let { viewController ->
@@ -44,8 +45,7 @@ class UIFragment : Fragment() {
     }
 
     override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): Animator? {
-        val activity = UIApplication.sharedApplication().activity()
-        val display: Display = activity.windowManager.defaultDisplay
+        val display: Display = requireActivity().windowManager.defaultDisplay
         val size = Point()
         display.getSize(size)
         return transition.animator(this, size, enter)

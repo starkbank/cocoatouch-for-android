@@ -222,11 +222,39 @@ We added an example app that use some structures, you should try it.
 
 ### 6. Installation and Configure Project
 
-6.1 Add to Gradle the last version:
+6.1 Add the dependency (Maven Central):
 
 ```sh
-compile 'com.starkbank:cocoatouch:0.0.1'
+implementation 'com.starkbank:cocoatouch:<version>'
 ```
+
+Requirements of the consuming app:
+
+- `minSdk` 25.
+- `compileSdk` 35 or higher (androidx.core 1.15.0 declares minCompileSdk 35).
+- Kotlin 2.1 or higher (the artifact's kotlin-stdlib is 2.2.21, and a compiler reads metadata at most one minor version ahead).
+- `android.nonFinalResIds=false` in `gradle.properties`, so `@IBOutlet(R.id.x)` accepts the ids.
+- `UIImagePickerController` needs a FileProvider with the authority `${applicationId}.provider` in the manifest, with the `android.support.FILE_PROVIDER_PATHS` meta-data pointing to an xml that contains `<cache-path name="cocoatouch_images" path="."/>`, because the temporary file goes to `cacheDir`. The `.provider` authority is a common name and may collide with another library's provider. The capture is written to `cacheDir`; the library keeps only the latest, deleting every earlier capture, and deletes a cancelled one, so copy the file if the app needs it beyond the next capture.
+- `<uses-permission android:name="android.permission.CAMERA"/>` when the `UIImagePickerController` camera is used.
+- `UIApplication.context()`/`activity()` are valid between the `onCreate` and the `onDestroy` of the `UIStoryboard`; the application context, and so `UserDefaults` and `UIPasteboard`, exists before `Application.onCreate` because the library initialises itself through androidx.startup's `InitializationProvider`, so they work from a `BroadcastReceiver`, a worker or `Application.onCreate`. `UIApplication.initialize(context)` exists for tests and unusual process setups. An app that removed that provider, or that runs code in another process (`android:process`), calls `UIApplication.initialize(this)` in `Application.onCreate`; to opt out of the automatic step, declare the provider in the app's manifest, with `xmlns:tools="http://schemas.android.com/tools"` on the `<manifest>` element, and remove the entry:
+
+```xml
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <meta-data
+        android:name="com.starkbank.cocoatouch.CocoaTouchInitializer"
+        tools:node="remove" />
+</provider>
+```
+- A back handler on the root controller is responsible for finishing the activity: `popViewController` at the root is a no-op, so a root that inherits a pop-only handler cannot be left with Back.
+- `android:configChanges="uiMode"` on the `UIStoryboard` activity, so a dark-mode switch updates `UITraitCollection` without recreating the activity (recreation resets navigation, see CT-16).
+- Set `title` on the controllers when the app is minified (see Known issues in the CHANGELOG).
+- `UIApplication.appearance` sets the theme; a change applies to views created afterwards, and presenting the screen again is up to the app.
+- Use `@id/cocoatouch_tab_container` in tab layouts.
+- Use `@OptIn(InternalCocoaTouchApi::class)` (`import com.starkbank.cocoatouch.annotation.InternalCocoaTouchApi`) to read `UIApplication.activity`/`storyboard` and the other members marked `@InternalCocoaTouchApi`.
 
 6.2 - Create file: MainStoryboard.kt
 
@@ -328,6 +356,92 @@ class MainStoryboard: UIStoryboard() {
 The initialViewControllerId is the id of the first ViewController. Your app will start there. 
 You can set any ViewController you want.
 
+### Supported interfaces
+
+| Interface | Apple equivalent | Supported | Deliberate differences |
+|---|---|---|---|
+| `UIActivity` | AppCompatActivity (Android) | Android-specific | `prepareLaunch()` runs before `super.onCreate` |
+| `UIStoryboard` | `UIStoryboard` | yes | Is the launch Activity |
+| `UIApplication` | `UIApplication` | yes | Filled by the library on attach; `activity`/`storyboard` are read-only for apps |
+| `UIApplicationDelegate` | `UIApplicationDelegate` | yes | - |
+| `UIResponder` | `UIResponder` | yes | - |
+| `NSObject` | `NSObject` | yes | - |
+| `UIViewController` | `UIViewController` | yes | Default title is `javaClass.simpleName` |
+| `UINavigationController` | `UINavigationController` | yes | - |
+| `UITabBarController` | `UITabBarController` | yes | Tab layouts use `@id/cocoatouch_tab_container` |
+| `UIFragment` | Fragment (Android) | Android-specific | behind `@InternalCocoaTouchApi` |
+| `UIView` | `UIView` | yes | - |
+| `UIControl` | `UIControl` | yes | - |
+| `UILabel` | `UILabel` | yes | - |
+| `UIButton` | `UIButton` | yes | - |
+| `UISwitch` | `UISwitch` | yes | - |
+| `UISegmentedControl` | `UISegmentedControl` | yes | - |
+| `UITextField` | `UITextField` | yes | `setText` is silent |
+| `BackEditText` | none | Android-specific | - |
+| `UITextFieldDelegate` | `UITextFieldDelegate` | yes | `shouldChange` cannot veto (CT-04) |
+| `UIKeyInput` | `UIKeyInput` | yes | A class here, a protocol on Apple; behind `@InternalCocoaTouchApi` |
+| `UISearchBar` | `UISearchBar` | yes | No `searchController`; cursor tint and handles only from API 29 |
+| `UISearchBarDelegate` | `UISearchBarDelegate` | yes | - |
+| `UIProgressView` | `UIProgressView` | type only, no progress API | - |
+| `UIScrollView` | `UIScrollView` | superclass of UITableView/UICollectionView only | - |
+| `UITableView` | `UITableView` | yes | Requires a `RecyclerView` in the layout |
+| `UITableViewCell` | `UITableViewCell` | yes | - |
+| `UITableViewDataSource` | `UITableViewDataSource` | yes | - |
+| `UITableViewDelegate` | `UITableViewDelegate` | yes | `willDisplay` skips rows before the last visible (CT-07) |
+| `UICollectionView` | `UICollectionView` | yes | - |
+| `UICollectionViewCell` | `UICollectionViewCell` | yes | - |
+| `UICollectionViewDataSource` | `UICollectionViewDataSource` | yes | - |
+| `UICollectionViewDelegate` | `UICollectionViewDelegate` | yes | - |
+| `UIViewHolder` | none | Android-specific | behind `@InternalCocoaTouchApi` |
+| `UIRefreshControl` | `UIRefreshControl` | yes | - |
+| `UIActivityIndicatorView` | `UIActivityIndicatorView` | yes | - |
+| `UIImage` | `UIImage` | yes | - |
+| `UIImageView` | `UIImageView` | yes | No `load` |
+| `UIImagePickerController` | `UIImagePickerController` | yes | Needs the FileProvider and, for the camera, the CAMERA permission |
+| `UIImagePickerControllerDelegate` | `UIImagePickerControllerDelegate` | yes | - |
+| `UIDocumentPickerViewController` | `UIDocumentPickerViewController` | yes | - |
+| `UIDocumentPickerDelegate` | `UIDocumentPickerDelegate` | yes | - |
+| `UINavigationBar` | `UINavigationBar` | yes | - |
+| `UITabBar` | `UITabBar` | yes | - |
+| `UITabBarItem` | `UITabBarItem` | yes | - |
+| `UITabBarDelegate` | `UITabBarDelegate` | yes | - |
+| `UIColor` | `UIColor` | yes | - |
+| `UIFont` | `UIFont` | yes | - |
+| `UIEdgeInsetsMake` | `UIEdgeInsets` | yes | - |
+| `UIScreen` | `UIScreen` | yes | - |
+| `UIPasteboard` | `UIPasteboard` | yes | - |
+| `UIControlState` | `UIControl.State` | yes | - |
+| `UIAppearance` | none | Android-specific | Theme defaults, set through `UIApplication.appearance` |
+| `UIDefaultAppearance` | none | Android-specific | Default `UIAppearance` |
+| `UITraitCollection` | `UITraitCollection` | yes | `userInterfaceStyle` only |
+| `UIUserInterfaceStyle` | `UIUserInterfaceStyle` | yes | - |
+| `WKWebView` | `WKWebView` | yes | User scripts run only on the origin passed to `load`; `file:` pages are told apart by path, so a path Chromium percent-encodes (spaces, non-ASCII) must be passed already encoded or the script does not run, and a page whose URL has no `//` after the scheme (`data:`, `about:`, `file:/x`) never receives the script; navigation is not restricted, and after a redirect to another origin the script does not run; the user script runs inside a guard block: top-level `let`/`const`/`class` are local to it, while a `function` or `var` stays global unless the script starts with `"use strict"`, so assign to `window` to expose values, and a `"use strict"` directive on the first line is honoured; `configuration` owns the `WebViewClient`, so set `configuration` last and do not replace the client afterwards |
+| `WKWebViewConfiguration` | `WKWebViewConfiguration` | yes | - |
+| `WKUserContentController` | `WKUserContentController` | yes | - |
+| `WKUserScript` | `WKUserScript` | yes | - |
+| `URLRequest` | `URLRequest` | url only, for WKWebView.load | - |
+| `NSArray` | `NSArray` | yes | - |
+| `NSMutableArray` | `NSMutableArray` | yes | `removeObject` removes all occurrences |
+| `NSIndexPath` | `NSIndexPath` | yes | - |
+| `NotificationCenter` | `NotificationCenter` | yes | - |
+| `NSNotificationName` | `NSNotification.Name` | yes | - |
+| `UserDefaults` | `UserDefaults` | yes | No `set<T>`/`object`; usable before any activity |
+| `DispatchGroup` | `DispatchGroup` | yes | `leave()` without `enter()` throws |
+| `DispatchQueue` | `DispatchQueue` | yes | - |
+| `Transition` | none | Android-specific | behind `@InternalCocoaTouchApi` |
+| `NoneTransition` | none | Android-specific | behind `@InternalCocoaTouchApi` |
+| `CGSize` | `CGSize` | yes | - |
+| `Frame` | `CGRect` | yes | - |
+| `IBAction` | `@IBAction` | yes | Validated at bind |
+| `IBOutlet` | `@IBOutlet` | yes | Takes an `R.id` |
+| `Optional` | none | Android-specific | The library's `@Optional` annotation on functions and accessors, not Swift's `Optional` type |
+| `IBActionParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `IBOutletParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `BackPressedParser` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `DefaultActions` | none | Android-specific | Android-specific binding and back-dispatch machinery; not part of the UIKit surface |
+| `WKUserScript.WKUserScriptInjectionTime` | `WKUserScriptInjectionTime` | yes | Nested enum here |
+| `InternalCocoaTouchApi` | none | Android-specific | Opt-in marker for the Android access |
+
 ### 7. Add new UIViewControllers or UITableViewCells to your project:
 
 7.1 - New UIViewController
@@ -420,4 +534,4 @@ You can contact us here or just send an email to: developers@starkbank.com
 
 ### 10. License
 
-MIT
+MIT, see [LICENSE](LICENSE).
